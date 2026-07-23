@@ -195,54 +195,220 @@ def decode_phpkobo(html):
 
 # ══════════════════════════════════════════════════════
 #   RDX DECODER V7.1 ENGINE
+#   Supports: @HTMLObfuscateBot / @ScriptDevX pattern
+#             + packer, atob, fromCharCode, unescape, hex
 # ══════════════════════════════════════════════════════
+
+def _extract_int_array(name, text):
+    """Extract a named JS integer array from script text."""
+    m = re.search(rf'{re.escape(name)}\s*=\s*\[([^\]]+)\]', text)
+    if m:
+        try:
+            return [int(float(x.strip())) for x in m.group(1).split(',')]
+        except Exception:
+            return None
+    return None
+
 def detect_rdx(html_content):
     """
     Auto-detect RDX V7.1 encoded HTML files.
-    Checks for multiple RDX encoding signatures.
+    Checks @HTMLObfuscateBot signature first, then generic patterns.
     """
-    patterns = [
-        # Dean Edwards packer style
-        r'eval\s*\(\s*function\s*\(\s*p\s*,\s*a\s*,\s*c\s*,\s*k\s*,\s*e\s*,\s*[dr]\s*\)',
-        # Base64 wrapped eval
-        r'eval\s*\(\s*atob\s*\(',
-        # RDX specific marker
-        r'(?:var|let|const)\s+[_$]?[0-9a-zA-Z]{1,6}\s*=\s*["\'](?:[A-Za-z0-9+/]{50,}={0,2})["\']',
-        # unescape + fromCharCode patterns
-        r'document\.write\s*\(\s*unescape\s*\(',
-        # String.fromCharCode massive array
-        r'String\.fromCharCode\s*\(\s*(?:\d+\s*,\s*){20,}',
-        # Hex encoded string with eval
-        r'eval\s*\(\s*["\']\\x',
-        # RDX V7 specific: encoded with specific length markers
-        r'<script[^>]*>[^<]{200,}<\/script>',
-    ]
-    for pat in patterns:
-        if re.search(pat, html_content, re.IGNORECASE | re.DOTALL):
+    # Primary: @HTMLObfuscateBot / @ScriptDevX signature
+    if ('HTMLObfuscateBot' in html_content or 'ScriptDevX' in html_content or
+            'HTMLOBF_PROTECTED' in html_content):
+        return True
+
+    # Secondary: state-machine + large byte arrays pattern (same obfuscator without header)
+    sc_m = re.search(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
+    if sc_m:
+        sc = sc_m.group(1)
+        # Look for 4+ large numeric arrays + RC4-like pattern
+        large_arrays = re.findall(r'=\s*\[\d+(?:,\s*\d+){200,}\]', sc)
+        if len(large_arrays) >= 4 and 'String.fromCharCode' in sc and '.charCodeAt(' in sc:
             return True
+        # Dean Edwards packer
+        if re.search(r'eval\s*\(\s*function\s*\(\s*p\s*,\s*a\s*,\s*c\s*,\s*k\s*,\s*e\s*,\s*[dr]\s*\)', sc):
+            return True
+        # Base64 eval
+        if re.search(r'eval\s*\(\s*atob\s*\(', sc):
+            return True
+        # unescape / fromCharCode / hex eval
+        if re.search(r'document\.write\s*\(\s*unescape\s*\(', sc):
+            return True
+        if re.search(r'String\.fromCharCode\s*\((?:\d+\s*,\s*){20,}', sc):
+            return True
+        if re.search(r'eval\s*\(\s*["\']\\x', sc):
+            return True
+
     return False
 
-def _rdx_decode_packer(script_content):
+def _rdx_decode_htmlobfbot(html_content):
+    """
+    Decode @HTMLObfuscateBot / @ScriptDevX multi-layer obfuscation.
+    Algorithm (in order):
+      1. Concat 4 byte arrays
+      2. XOR with key1
+      3. Block-shuffle (16-byte blocks) with perm1
+      4. Substitution table sub1
+      5. XOR with key2
+      6. Subtract key3 (mod 256)
+      7. XOR cascade (seed=184)
+      8. Bit-rotate per position index
+      9. Block-shuffle (16-byte blocks) with perm2
+     10. Substitution table sub3
+     11. RC4 with rc4key
+     12. bytes → latin-1 → escape/unescape → result
+    """
+    sc_m = re.search(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
+    if not sc_m:
+        return None
+    sc = sc_m.group(1)
+
+    # Discover the 4 data arrays by size (≥500 elements each, values 0-255)
+    # They are always concatenated in the same order they appear in the script
+    all_arrays = re.finditer(r'(\b_[A-Za-z0-9_]+)\s*=\s*\[(\d+(?:,\s*(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*){100,})\]', sc)
+    byte_arrays = []
+    for m in all_arrays:
+        vals = [int(float(x.strip())) for x in m.group(2).split(',')]
+        if all(0 <= v <= 255 for v in vals) and len(vals) >= 100:
+            byte_arrays.append((m.group(1), vals))
+
+    if len(byte_arrays) < 4:
+        return None  # Not enough data arrays
+
+    # The 4 largest arrays are the payload; sub tables (256 elements) are separate
+    sub_arrays   = [a for a in byte_arrays if len(a[1]) == 256]
+    data_arrays  = [a for a in byte_arrays if len(a[1]) > 256]
+
+    if len(data_arrays) < 4 or len(sub_arrays) < 2:
+        return None
+
+    # Also find int arrays > 256 (permutation tables with block indices)
+    all_int_arrays = re.finditer(r'(\b_[A-Za-z0-9_]+)\s*=\s*\[(\d+(?:,\s*(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*){100,})\]', sc)
+    perm_arrays = []
+    for m in all_int_arrays:
+        vals = [int(float(x.strip())) for x in m.group(2).split(',')]
+        if max(vals) > 255 and len(vals) > 100:
+            perm_arrays.append((m.group(1), vals))
+
+    if len(perm_arrays) < 2:
+        return None
+
+    # Key arrays (32 bytes, 0-255)
+    key_arrays = [a for a in byte_arrays if 16 <= len(a[1]) <= 64]
+    if len(key_arrays) < 4:
+        return None
+
+    # Named variable extraction for known variable patterns
+    # Try to find the specific variables by name pattern used by obfuscator
+    # Fallback: use positional order found in script
+
+    # Build data
+    arr_vals = [a[1] for a in data_arrays[:4]]
+    data = arr_vals[0] + arr_vals[1] + arr_vals[2] + arr_vals[3]
+    N = len(data)
+    blocks = N // 16
+
+    # Keys in order of appearance
+    keys = [a[1] for a in key_arrays]
+    subs = [a[1] for a in sub_arrays]
+    perms = [a[1] for a in perm_arrays[:2]]
+
+    xor1  = keys[0]
+    xor2  = keys[1] if len(keys) > 1 else keys[0]
+    sub2  = keys[2] if len(keys) > 2 else keys[0]
+    rc4k  = keys[3] if len(keys) > 3 else keys[0]
+    perm1 = perms[0]
+    perm2 = perms[1]
+    sub1  = subs[0]
+    sub3  = subs[1] if len(subs) > 1 else subs[0]
+
+    try:
+        # Step 2: XOR key1
+        for i in range(N):
+            data[i] ^= xor1[i % len(xor1)]
+
+        # Step 3: Block shuffle perm1
+        W = [0]*N
+        for i in range(blocks):
+            src = perm1[i] * 16
+            dst = i * 16
+            W[dst:dst+16] = data[src:src+16]
+        data = W
+
+        # Step 4: Substitution sub1
+        for i in range(N):
+            data[i] = sub1[data[i]]
+
+        # Step 5: XOR key2
+        for i in range(N):
+            data[i] ^= xor2[i % len(xor2)]
+
+        # Step 6: Subtract key3
+        for i in range(N):
+            data[i] = (data[i] - sub2[i % len(sub2)] + 256) & 255
+
+        # Step 7: XOR cascade seed=184
+        prev = 184
+        for i in range(N):
+            orig = data[i]; data[i] ^= prev; prev = orig
+
+        # Step 8: Bit rotation per index
+        for i in range(N):
+            r = i & 7
+            if r > 0:
+                data[i] = ((data[i] >> r) | (data[i] << (8 - r))) & 255
+
+        # Step 9: Block shuffle perm2
+        W = [0]*N
+        for i in range(blocks):
+            src = perm2[i] * 16
+            dst = i * 16
+            W[dst:dst+16] = data[src:src+16]
+        data = W
+
+        # Step 10: Substitution sub3
+        for i in range(N):
+            data[i] = sub3[data[i]]
+
+        # Step 11: RC4
+        S = list(range(256)); j2 = 0
+        for i in range(256):
+            j2 = (j2 + S[i] + rc4k[i % len(rc4k)]) & 255
+            S[i], S[j2] = S[j2], S[i]
+        i2 = j2 = 0
+        for k in range(N):
+            i2 = (i2 + 1) & 255
+            j2 = (j2 + S[i2]) & 255
+            S[i2], S[j2] = S[j2], S[i2]
+            data[k] ^= S[(S[i2] + S[j2]) & 255]
+
+        # Step 12: bytes → string
+        raw = bytes(data)
+        try:
+            result = raw.decode('utf-8')
+        except Exception:
+            import urllib.parse
+            result = urllib.parse.unquote(raw.decode('latin-1'))
+
+        if len(result) > 100 and ('<' in result or 'document' in result or 'window' in result):
+            return result
+
+    except Exception:
+        pass
+    return None
+
+def _rdx_decode_packer(sc):
     """Decode Dean Edwards p,a,c,k,e,d packer."""
     m = re.search(
         r"eval\s*\(\s*function\s*\(p,a,c,k,e,(?:r|d)\)\s*\{.*?\}\s*\('(.*?)',\s*(\d+),\s*(\d+),\s*'(.*?)'\.split\('\|'\)",
-        script_content, re.DOTALL
-    )
+        sc, re.DOTALL)
     if not m:
         return None
-    payload, base, count, keys_str = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)
+    payload, base, keys_str = m.group(1), int(m.group(2)), m.group(4)
     keys = keys_str.split('|')
-
-    def unbase(num, base):
-        chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        result = ''
-        while num > 0:
-            result = chars[num % base] + result
-            num //= base
-        return result or '0'
-
     def lookup(word):
-        idx_str = unbase(int(word, 10) if word.isdigit() else int(word, base), 10)
         try:
             idx = int(word, base)
             if idx < len(keys) and keys[idx]:
@@ -250,14 +416,10 @@ def _rdx_decode_packer(script_content):
         except Exception:
             pass
         return word
+    return re.sub(r'\b(\w+)\b', lambda x: lookup(x.group(0)), payload)
 
-    decoded = re.sub(r'\b(\w+)\b', lambda m2: lookup(m2.group(0)), payload)
-    return decoded
-
-def _rdx_decode_atob(script_content):
-    """Decode eval(atob(...)) style encoding."""
-    # Match eval(atob("...")) or eval(atob('...'))
-    m = re.search(r'eval\s*\(\s*atob\s*\(\s*["\']([A-Za-z0-9+/=]+)["\']\s*\)', script_content)
+def _rdx_decode_atob(sc):
+    m = re.search(r'eval\s*\(\s*atob\s*\(\s*["\']([A-Za-z0-9+/=]+)["\']\s*\)', sc)
     if not m:
         return None
     try:
@@ -265,9 +427,8 @@ def _rdx_decode_atob(script_content):
     except Exception:
         return None
 
-def _rdx_decode_fromcharcode(script_content):
-    """Decode String.fromCharCode(...) patterns."""
-    m = re.search(r'String\.fromCharCode\s*\(([\d\s,]+)\)', script_content)
+def _rdx_decode_fromcharcode(sc):
+    m = re.search(r'String\.fromCharCode\s*\(([\d\s,]+)\)', sc)
     if not m:
         return None
     try:
@@ -276,9 +437,8 @@ def _rdx_decode_fromcharcode(script_content):
     except Exception:
         return None
 
-def _rdx_decode_unescape(script_content):
-    """Decode unescape(%xx%xx...) patterns."""
-    m = re.search(r'unescape\s*\(\s*["\']([%0-9a-fA-F]+)["\']\s*\)', script_content)
+def _rdx_decode_unescape(sc):
+    m = re.search(r'unescape\s*\(\s*["\']([%0-9a-fA-F]+)["\']\s*\)', sc)
     if not m:
         return None
     try:
@@ -287,84 +447,47 @@ def _rdx_decode_unescape(script_content):
     except Exception:
         return None
 
-def _rdx_decode_hex_eval(script_content):
-    """Decode eval("\\xHH\\xHH...") hex escape patterns."""
-    m = re.search(r'eval\s*\(\s*["\']((\\x[0-9a-fA-F]{2})+)["\']\s*\)', script_content)
+def _rdx_decode_hex_eval(sc):
+    m = re.search(r'eval\s*\(\s*["\']((\\x[0-9a-fA-F]{2})+)["\']\s*\)', sc)
     if not m:
         return None
     try:
-        hex_str = m.group(1)
-        result = re.sub(r'\\x([0-9a-fA-F]{2})', lambda h: chr(int(h.group(1), 16)), hex_str)
-        return result
+        return re.sub(r'\\x([0-9a-fA-F]{2})', lambda h: chr(int(h.group(1), 16)), m.group(1))
     except Exception:
         return None
 
-def _rdx_decode_base64_var(html_content):
-    """Decode large base64 variable assignment patterns."""
-    m = re.search(
-        r'(?:var|let|const)\s+[_$]?[0-9a-zA-Z]{1,8}\s*=\s*["\']([A-Za-z0-9+/]{50,}={0,2})["\']',
-        html_content
-    )
-    if not m:
-        return None
-    try:
-        decoded = base64.b64decode(m.group(1)).decode('utf-8', errors='replace')
-        if len(decoded) > 50 and ('<' in decoded or 'document' in decoded or 'window' in decoded):
-            return decoded
-    except Exception:
-        pass
-    return None
+def decode_rdx(html_content):
+    """
+    RDX DECODER V7.1 — Multi-method auto decoder.
+    Priority:
+      1. @HTMLObfuscateBot / @ScriptDevX (multi-layer RC4+shuffle+XOR)
+      2. Dean Edwards packer
+      3. eval(atob(...))
+      4. String.fromCharCode
+      5. unescape(%xx)
+      6. hex eval
+    """
+    # Method 1: @HTMLObfuscateBot multi-layer
+    result = _rdx_decode_htmlobfbot(html_content)
+    if result:
+        return result if result.strip().startswith('<') else \
+               f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{result}</body></html>"
 
-def _rdx_inline_script_decode(html_content):
-    """Extract and try all methods on inline scripts."""
+    # Methods 2-6: inline script fallbacks
     scripts = re.findall(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
     for sc in scripts:
         sc = sc.strip()
         if not sc:
             continue
-        for decoder in [_rdx_decode_packer, _rdx_decode_atob, _rdx_decode_fromcharcode,
-                        _rdx_decode_unescape, _rdx_decode_hex_eval]:
+        for fn in [_rdx_decode_packer, _rdx_decode_atob,
+                   _rdx_decode_fromcharcode, _rdx_decode_unescape, _rdx_decode_hex_eval]:
             try:
-                result = decoder(sc)
-                if result and len(result) > 30:
-                    return result
+                r = fn(sc)
+                if r and len(r) > 30:
+                    return r if r.strip().startswith('<') else \
+                           f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{html_module.unescape(r)}</body></html>"
             except Exception:
                 continue
-    return None
-
-def decode_rdx(html_content):
-    """
-    RDX DECODER V7.1 — Multi-method auto decoder.
-    Tries all known RDX encoding techniques in order.
-    """
-    # Method 1: Inline script decode (packer, atob, fromCharCode, unescape, hex)
-    result = _rdx_inline_script_decode(html_content)
-    if result:
-        # If decoded result is itself HTML-like, return wrapped
-        if result.strip().startswith('<'):
-            return result
-        # Otherwise embed decoded result into a minimal HTML page
-        return f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{html_module.unescape(result)}</body></html>"
-
-    # Method 2: Large base64 variable
-    result = _rdx_decode_base64_var(html_content)
-    if result:
-        if result.strip().startswith('<'):
-            return result
-        return f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{html_module.unescape(result)}</body></html>"
-
-    # Method 3: Try base64 decoding entire script content
-    scripts = re.findall(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
-    for sc in scripts:
-        sc_stripped = sc.strip().strip('"\'')
-        try:
-            # Try pure base64
-            padded = sc_stripped + '=' * (-len(sc_stripped) % 4)
-            decoded = base64.b64decode(padded).decode('utf-8', errors='replace')
-            if len(decoded) > 100 and ('<' in decoded or 'document' in decoded):
-                return decoded
-        except Exception:
-            pass
 
     raise ValueError("RDX V7.1: No recognizable encoding pattern found in this file.")
 
