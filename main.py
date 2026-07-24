@@ -118,34 +118,31 @@ def main_kb():
 # ══════════════════════════════════════════════════════
 async def send_welcome(bot, chat_id, first_name):
     txt = (
-        "🌐⚡━━━━━━━━━━━━━━━━━━━━━━⚡🌐\n"
-        "       🧬  <b>𝗛𝗧𝗠𝗟  𝗗𝗘𝗖𝗢𝗗𝗘𝗥  𝗕𝗢𝗧</b>\n"
-        "🌐⚡━━━━━━━━━━━━━━━━━━━━━━⚡🌐\n\n"
-        f"🎉  𝒲𝑒𝓁𝒸𝑜𝓂𝑒,  <b>{first_name}</b>!  👋\n\n"
-        "💡  𝙸 𝚌𝚊𝚗 𝚒𝚗𝚜𝚝𝚊𝚗𝚝𝚕𝚢 <b>𝗱𝗲𝗰𝗿𝘆𝗽𝘁</b> 𝚊𝚗𝚢\n"
-        "      𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 𝚢𝚘𝚞 𝚜𝚎𝚗𝚍.\n\n"
-        "🔥━━━━━━━━━━━━━━━━━━🔥\n"
-        "   ⚙️  <b>𝗗𝗲𝗰𝗿𝘆𝗽𝘁𝗶𝗼𝗻 𝗘𝗻𝗴𝗶𝗻𝗲𝘀</b>\n"
-        "🔥━━━━━━━━━━━━━━━━━━🔥\n\n"
-        "🔷  ⚡ <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>   ╌╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍\n"
-        "🔷  🔓 <b>𝗥𝗗𝗫 𝘃𝟳.𝟭</b>  ╌╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍  ✨\n"
-        "🔷  🖥️ <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>    ╌╌  𝚜𝚝𝚊𝚗𝚍𝚊𝚛𝚍 𝚎𝚗𝚌\n\n"
-        "⚡━━━━━━━━━━━━━━━━━━⚡\n\n"
-        "👇  𝚄𝚜𝚎 𝚝𝚑𝚎 𝚖𝚎𝚗𝚞 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚜𝚝𝚊𝚛𝚝 ↓"
+        "╔══════════════════════════════╗\n"
+        "  🧬  <b>𝗛𝗧𝗠𝗟  𝗗𝗘𝗖𝗢𝗗𝗘𝗥  𝗕𝗢𝗧</b>\n"
+        "╚══════════════════════════════╝\n\n"
+        f"👾  𝒲𝑒𝓁𝒸𝑜𝓂𝑒,  <b>{first_name}</b>!\n\n"
+        "𝙸 𝚌𝚊𝚗 𝚒𝚗𝚜𝚝𝚊𝚗𝚝𝚕𝚢 𝚍𝚎𝚌𝚛𝚢𝚙𝚝 𝚊𝚗𝚢\n"
+        "𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 𝚢𝚘𝚞 𝚜𝚎𝚗𝚍.\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "〔 ⚙️  <b>𝗗𝗲𝗰𝗿𝘆𝗽𝘁𝗶𝗼𝗻 𝗘𝗻𝗴𝗶𝗻𝗲𝘀</b> 〕\n\n"
+        "◈  ⚡ <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>   ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍\n"
+        "◈  🔓 <b>𝗥𝗗𝗫 𝘃𝟳.𝟭</b>  ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍  🆕\n"
+        "◈  🖥️ <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>    ╌  𝚜𝚝𝚊𝚗𝚍𝚊𝚛𝚍 𝚎𝚗𝚌\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "🔻  𝚄𝚜𝚎 𝚝𝚑𝚎 𝚖𝚎𝚗𝚞 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚜𝚝𝚊𝚛𝚝 ↓"
     )
     await bot.send_message(chat_id, txt, parse_mode=ParseMode.HTML, reply_markup=main_kb())
 
 def ban_text(uid):
     return (
-        "🚫🔴━━━━━━━━━━━━━━━━━━🔴🚫\n"
-        "      ⛔  <b>𝗔𝗖𝗖𝗘𝗦𝗦  𝗗𝗘𝗡𝗜𝗘𝗗</b>\n"
-        "🚫🔴━━━━━━━━━━━━━━━━━━🔴🚫\n\n"
-        "😔  𝚈𝚘𝚞 𝚑𝚊𝚟𝚎 𝚋𝚎𝚎𝚗 <b>𝗯𝗮𝗻𝗻𝗲𝗱</b>\n"
-        "     𝚏𝚛𝚘𝚖 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝.\n\n"
-        f"🪪  <b>𝗬𝗼𝘂𝗿 𝗜𝗗</b>  ╌╌  <code>{uid}</code>\n"
-        f"👑  <b>𝗢𝘄𝗻𝗲𝗿</b>   ╌╌  @{OWNER_USERNAME}\n\n"
-        "📩  𝙲𝚘𝚗𝚝𝚊𝚌𝚝 𝚝𝚑𝚎 𝙾𝚠𝚗𝚎𝚛 𝚠𝚒𝚝𝚑\n"
-        "     𝚢𝚘𝚞𝚛 𝙸𝙳 𝚝𝚘 𝚊𝚙𝚙𝚎𝚊𝚕."
+        "╔══════════════════════╗\n"
+        "  🚷  <b>𝗔𝗖𝗖𝗘𝗦𝗦  𝗗𝗘𝗡𝗜𝗘𝗗</b>\n"
+        "╚══════════════════════╝\n\n"
+        "𝚈𝚘𝚞 𝚑𝚊𝚟𝚎 𝚋𝚎𝚎𝚗 <b>𝗯𝗮𝗻𝗻𝗲𝗱</b> 𝚏𝚛𝚘𝚖 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝.\n\n"
+        f"🪪  <b>𝗬𝗼𝘂𝗿 𝗜𝗗</b>  ╌  <code>{uid}</code>\n"
+        f"👑  <b>𝗢𝘄𝗻𝗲𝗿</b>   ╌  @{OWNER_USERNAME}\n\n"
+        "𝙲𝚘𝚗𝚝𝚊𝚌𝚝 𝚝𝚑𝚎 𝙾𝚠𝚗𝚎𝚛 𝚠𝚒𝚝𝚑 𝚢𝚘𝚞𝚛 𝙸𝙳."
     )
 
 # ══════════════════════════════════════════════════════
@@ -274,14 +271,14 @@ async def decode_rdx(in_path: str, out_path: str) -> str:
 #   INIT ANIMATION  — New Braille Spinner
 # ══════════════════════════════════════════════════════
 _INIT_FRAMES = [
-    "🔌  ⠋  𝙱𝚘𝚘𝚝𝚒𝚗𝚐 𝚜𝚢𝚜𝚝𝚎𝚖...",
-    "⚙️  ⠙  𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙲𝚘𝚛𝚎...",
-    "🔧  ⠸  𝙸𝚗𝚒𝚝 𝙴𝚗𝚐𝚒𝚗𝚎𝚜...",
-    "🧬  ⠼  𝙲𝚊𝚕𝚒𝚋𝚛𝚊𝚝𝚒𝚗𝚐...",
-    "🔬  ⠤  𝙳𝚒𝚊𝚐𝚗𝚘𝚜𝚝𝚒𝚌𝚜...",
-    "🛡️  ⠦  𝚅𝚎𝚛𝚒𝚏𝚢𝚒𝚗𝚐 𝚂𝚢𝚜𝚝𝚎𝚖𝚜...",
-    "🚀  ⡀  𝙶𝚎𝚝𝚝𝚒𝚗𝚐 𝚁𝚎𝚊𝚍𝚢...",
-    "✨  ✦  𝗔𝗟𝗟  𝗦𝗬𝗦𝗧𝗘𝗠𝗦  𝗥𝗘𝗔𝗗𝗬  🎯",
+    "⠋  𝙱𝚘𝚘𝚝𝚒𝚗𝚐 𝚜𝚢𝚜𝚝𝚎𝚖...",
+    "⠙  𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙲𝚘𝚛𝚎...",
+    "⠸  𝙸𝚗𝚒𝚝 𝙴𝚗𝚐𝚒𝚗𝚎𝚜...",
+    "⠼  𝙲𝚊𝚕𝚒𝚋𝚛𝚊𝚝𝚒𝚗𝚐...",
+    "⠤  𝙳𝚒𝚊𝚐𝚗𝚘𝚜𝚝𝚒𝚌𝚜...",
+    "⠦  𝚅𝚎𝚛𝚒𝚏𝚢𝚒𝚗𝚐...",
+    "⡀  𝙶𝚎𝚝𝚝𝚒𝚗𝚐 𝚛𝚎𝚊𝚍𝚢...",
+    "✦  𝗔𝗟𝗟  𝗦𝗬𝗦𝗧𝗘𝗠𝗦  𝗚𝗢!",
 ]
 
 async def _decode_start(update, context):
@@ -296,106 +293,92 @@ async def _decode_start(update, context):
 
     context.user_data["waiting_for_html"] = True
     await update.message.reply_html(
-        "📂✨━━━━━━━━━━━━━━━━━━✨📂\n"
-        "      📤  <b>𝗦𝗲𝗻𝗱 𝗬𝗼𝘂𝗿 𝗙𝗶𝗹𝗲</b>\n"
-        "📂✨━━━━━━━━━━━━━━━━━━✨📂\n\n"
-        "📎  𝚂𝚎𝚗𝚍 𝚢𝚘𝚞𝚛 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 ↓\n\n"
-        "✅  <b>𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱:</b>  .html  ·  .htm\n\n"
-        "🔄  <b>𝗔𝘂𝘁𝗼-𝗗𝗲𝘁𝗲𝗰𝘁𝘀:</b>\n"
-        "      ⚡ 𝗽𝗵𝗽𝗸𝗼𝗯𝗼  ·  🔓 𝗥𝗗𝗫  ·  🖥️ 𝗦𝗲𝗿𝘃𝗲𝗿\n\n"
-        "💬  <i>𝚆𝚊𝚒𝚝𝚒𝚗𝚐 𝚏𝚘𝚛 𝚏𝚒𝚕𝚎...</i>  ⏳"
+        "╔══════════════════════════╗\n"
+        "  🗂  <b>𝗦𝗲𝗻𝗱 𝗬𝗼𝘂𝗿 𝗙𝗶𝗹𝗲</b>\n"
+        "╚══════════════════════════╝\n\n"
+        "𝚂𝚎𝚗𝚍 𝚢𝚘𝚞𝚛 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 ↓\n\n"
+        "🔸  <b>𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱:</b>  .html  ╌  .htm\n\n"
+        "〔 𝙰𝚞𝚝𝚘-𝙳𝚎𝚝𝚎𝚌𝚝𝚜:  𝗽𝗵𝗽𝗸𝗼𝗯𝗼  ·  𝗥𝗗𝗫  ·  𝗦𝗲𝗿𝘃𝗲𝗿 〕"
     )
 
 # ══════════════════════════════════════════════════════
 #   PHPKOBO  CHECKLIST  ANIMATION
 # ══════════════════════════════════════════════════════
 _PK = [
-    ("🔎", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌╌  𝗽𝗵𝗽𝗸𝗼𝗯𝗼"),
+    ("🔎", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗽𝗵𝗽𝗸𝗼𝗯𝗼"),
     ("🔑", "𝙵𝚞𝚗𝚌𝚝𝚒𝚘𝚗 𝚆𝚛𝚊𝚙𝚙𝚎𝚛 𝙻𝚘𝚌𝚊𝚝𝚎𝚍"),
     ("📦", "𝙿𝚊𝚢𝚕𝚘𝚊𝚍 𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚎𝚍"),
     ("🧩", "𝙱-𝙼𝚊𝚛𝚔𝚎𝚛 𝙵𝚘𝚞𝚗𝚍"),
     ("📐", "𝙲𝚒𝚙𝚑𝚎𝚛 𝙷𝚎𝚊𝚍𝚎𝚛 𝙰𝚗𝚊𝚕𝚢𝚣𝚎𝚍"),
-    ("⚗️", "𝙱𝚢𝚝𝚎𝚜 𝙳𝚎𝚌𝚛𝚢𝚙𝚝𝚎𝚍"),
-    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍  ✅"),
+    ("🔓", "𝙱𝚢𝚝𝚎𝚜 𝙳𝚎𝚌𝚛𝚢𝚙𝚝𝚎𝚍"),
+    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍"),
 ]
 
 def _pk_msg(cur):
-    h = (
-        "⚡🔐━━━━━━━━━━━━━━━━━━🔐⚡\n"
-        "  <b>𝗣𝗛𝗣𝗞𝗢𝗕𝗢  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n"
-        "⚡🔐━━━━━━━━━━━━━━━━━━🔐⚡\n\n"
-    )
+    h = "⚡  <b>𝗣𝗛𝗣𝗞𝗢𝗕𝗢  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
     lines = []
     for i, (icon, label) in enumerate(_PK):
-        if i < cur:    lines.append(f"  ✅  {icon}  {label}")
-        elif i == cur: lines.append(f"  🔄  {icon}  <b>{label}...</b>")
-        else:          lines.append(f"  ⬜  {icon}  {label}")
+        if i < cur:    lines.append(f"  ✦  {icon}  {label}")
+        elif i == cur: lines.append(f"  ⟳  {icon}  {label}...")
+        else:          lines.append(f"  ◌  {icon}  {label}")
     return h + "\n".join(lines)
 
 # ══════════════════════════════════════════════════════
 #   RDX v7.1  CHECKLIST  ANIMATION  (NEW)
 # ══════════════════════════════════════════════════════
 _RDX = [
-    ("🔍", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌╌  𝗥𝗗𝗫 𝘃𝟳.𝟭"),
+    ("🔍", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗥𝗗𝗫 𝘃𝟳.𝟭"),
     ("🧬", "𝙱𝚕𝚘𝚌𝚔 𝙳𝚎𝚝𝚎𝚌𝚝𝚒𝚘𝚗"),
     ("⚙️", "𝚂𝚊𝚗𝚍𝚋𝚘𝚡 𝙸𝚗𝚒𝚝𝚒𝚊𝚕𝚒𝚣𝚒𝚗𝚐"),
     ("🔑", "𝙻𝚊𝚢𝚎𝚛 𝟷  𝙳𝚎𝚌𝚘𝚍𝚒𝚗𝚐"),
     ("🔓", "𝙻𝚊𝚢𝚎𝚛 𝟸  𝚁𝚎𝚜𝚘𝚕𝚟𝚒𝚗𝚐"),
-    ("🛡️", "𝚂𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎 𝚅𝚊𝚕𝚒𝚍𝚊𝚝𝚒𝚗𝚐"),
-    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍  ✅"),
+    ("🛡", "𝚂𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎 𝚅𝚊𝚕𝚒𝚍𝚊𝚝𝚒𝚗𝚐"),
+    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍"),
 ]
 
 def _rdx_msg(cur):
-    h = (
-        "🔓🧬━━━━━━━━━━━━━━━━━━🧬🔓\n"
-        "  <b>𝗥𝗗𝗫  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲  𝘃𝟳.𝟭</b>\n"
-        "🔓🧬━━━━━━━━━━━━━━━━━━🧬🔓\n\n"
-    )
+    h = "🔓  <b>𝗥𝗗𝗫  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲  𝘃𝟳.𝟭</b>\n\n"
     lines = []
     for i, (icon, label) in enumerate(_RDX):
-        if i < cur:    lines.append(f"  ✅  {icon}  {label}")
-        elif i == cur: lines.append(f"  🔄  {icon}  <b>{label}...</b>")
-        else:          lines.append(f"  ⬜  {icon}  {label}")
+        if i < cur:    lines.append(f"  ✦  {icon}  {label}")
+        elif i == cur: lines.append(f"  ⟳  {icon}  {label}...")
+        else:          lines.append(f"  ◌  {icon}  {label}")
     return h + "\n".join(lines)
 
 # ══════════════════════════════════════════════════════
 #   SERVER ENGINE  PROGRESS BAR  ANIMATION  (Updated)
 # ══════════════════════════════════════════════════════
 _BR = [
-    ( 0,  "🚀", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌╌  𝗦𝗲𝗿𝘃𝗲𝗿"),
-    (12,  "🌐", "𝙻𝚊𝚞𝚗𝚌𝚑𝚒𝚗𝚐 𝙲𝚑𝚛𝚘𝚖𝚒𝚞𝚖..."),
-    (26,  "⚙️", "𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙴𝚗𝚐𝚒𝚗𝚎..."),
-    (40,  "🖥️", "𝚂𝚎𝚛𝚟𝚎𝚛 𝚁𝚞𝚗𝚗𝚒𝚗𝚐..."),
-    (55,  "🔍", "𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝙷𝚃𝙼𝙻..."),
-    (68,  "🎨", "𝚁𝚎𝚗𝚍𝚎𝚛𝚒𝚗𝚐 𝙿𝚊𝚐𝚎..."),
-    (80,  "📊", "𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚒𝚗𝚐 𝙳𝚊𝚝𝚊..."),
-    (91,  "📦", "𝙱𝚞𝚒𝚕𝚍𝚒𝚗𝚐 𝙾𝚞𝚝𝚙𝚞𝚝..."),
-    (97,  "✨", "𝙵𝚒𝚗𝚊𝚕𝚒𝚣𝚒𝚗𝚐..."),
+    ( 0,  "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗦𝗲𝗿𝘃𝗲𝗿"),
+    (12,  "𝙻𝚊𝚞𝚗𝚌𝚑𝚒𝚗𝚐 𝙲𝚑𝚛𝚘𝚖𝚒𝚞𝚖..."),
+    (26,  "𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙴𝚗𝚐𝚒𝚗𝚎..."),
+    (40,  "𝚂𝚎𝚛𝚟𝚎𝚛 𝚁𝚞𝚗𝚗𝚒𝚗𝚐..."),
+    (55,  "𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝙷𝚃𝙼𝙻..."),
+    (68,  "𝚁𝚎𝚗𝚍𝚎𝚛𝚒𝚗𝚐 𝙿𝚊𝚐𝚎..."),
+    (80,  "𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚒𝚗𝚐 𝙳𝚊𝚝𝚊..."),
+    (91,  "𝙱𝚞𝚒𝚕𝚍𝚒𝚗𝚐 𝙾𝚞𝚝𝚙𝚞𝚝..."),
+    (97,  "𝙵𝚒𝚗𝚊𝚕𝚒𝚣𝚒𝚗𝚐..."),
 ]
 
 def _br_msg(idx):
-    pct, emoji, label = _BR[idx % len(_BR)]
+    pct, label = _BR[idx % len(_BR)]
     filled = int(pct / 10)
-    bar    = "🟩" * filled + "⬜" * (10 - filled)
+    bar    = "█" * filled + "░" * (10 - filled)
     return (
-        "🖥️🌐━━━━━━━━━━━━━━━━━━🌐🖥️\n"
-        "  <b>𝗦𝗲𝗿𝘃𝗲𝗿  𝗥𝗲𝗻𝗱𝗲𝗿  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n"
-        "🖥️🌐━━━━━━━━━━━━━━━━━━🌐🖥️\n\n"
-        f"  {bar}\n"
-        f"  📊  <b>{pct}%</b>  𝙲𝚘𝚖𝚙𝚕𝚎𝚝𝚎\n\n"
-        f"  {emoji}  {label}"
+        f"🖥️  <b>𝗦𝗲𝗿𝘃𝗲𝗿  𝗥𝗲𝗻𝗱𝗲𝗿  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
+        f"  [{bar}]  {pct}%\n\n"
+        f"  🔹  {label}"
     )
 
 # ══════════════════════════════════════════════════════
 #   DECODE  STEP 2 — PROCESS  (Auto-Detect: PK → RDX → Server)
 # ══════════════════════════════════════════════════════
 async def _do_decode(update, context, doc, fname):
-    msg = await update.message.reply_text("🛰️  ⠋  𝙴𝚜𝚝𝚊𝚋𝚕𝚒𝚜𝚑𝚒𝚗𝚐 𝚌𝚘𝚗𝚗𝚎𝚌𝚝𝚒𝚘𝚗...")
-    for s in ["📥  ⠙  𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚒𝚗𝚐 𝚏𝚒𝚕𝚎...",
-              "🔬  ⠸  𝙸𝚗𝚜𝚙𝚎𝚌𝚝𝚒𝚗𝚐 𝚜𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎...",
-              "🧪  ⠼  𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗...",
-              "🎯  ⠤  𝙳𝚎𝚝𝚎𝚌𝚝𝚒𝚗𝚐 𝚎𝚗𝚐𝚒𝚗𝚎..."]:
-        await asyncio.sleep(0.65)
+    msg = await update.message.reply_text("🛰️  𝙴𝚜𝚝𝚊𝚋𝚕𝚒𝚜𝚑𝚒𝚗𝚐 𝚌𝚘𝚗𝚗𝚎𝚌𝚝𝚒𝚘𝚗...")
+    for s in ["📥  𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚒𝚗𝚐 𝚏𝚒𝚕𝚎...",
+              "🔬  𝙸𝚗𝚜𝚙𝚎𝚌𝚝𝚒𝚗𝚐 𝚜𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎...",
+              "🧪  𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗..."]:
+        await asyncio.sleep(0.75)
         try: await msg.edit_text(s)
         except: pass
 
@@ -483,7 +466,7 @@ async def _do_decode(update, context, doc, fname):
             save_db(db)
 
             # ── Send results ───────────────────────────────────────
-            try: await msg.edit_text("✨  𝙳𝚘𝚗𝚎!  🎉  𝚂𝚎𝚗𝚍𝚒𝚗𝚐 𝚛𝚎𝚜𝚞𝚕𝚝𝚜...")
+            try: await msg.edit_text("✦  𝙳𝚘𝚗𝚎!  𝚂𝚎𝚗𝚍𝚒𝚗𝚐 𝚛𝚎𝚜𝚞𝚕𝚝𝚜...")
             except: pass
             await asyncio.sleep(0.4)
 
@@ -491,11 +474,9 @@ async def _do_decode(update, context, doc, fname):
             await update.message.reply_photo(
                 photo=io.BytesIO(screenshot),
                 caption=(
-                    "🖼️🌟━━━━━━━━━━━━━━━━━━🌟🖼️\n"
-                    "      📸  <b>𝗣𝗮𝗴𝗲 𝗦𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁</b>\n"
-                    "🖼️🌟━━━━━━━━━━━━━━━━━━🌟🖼️\n\n"
-                    f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌╌  {method}\n\n"
-                    "📎  𝙵𝚒𝚕𝚎 𝚜𝚎𝚗𝚍𝚒𝚗𝚐 𝚋𝚎𝚕𝚘𝚠 ↓ 👇"
+                    f"🖼  <b>𝗣𝗮𝗴𝗲 𝗦𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁</b>\n\n"
+                    f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌  {method}\n"
+                    "📎  𝙵𝚒𝚕𝚎 𝚜𝚎𝚗𝚍𝚒𝚗𝚐 𝚋𝚎𝚕𝚘𝚠 ↓"
                 ),
                 parse_mode=ParseMode.HTML,
             )
@@ -504,12 +485,11 @@ async def _do_decode(update, context, doc, fname):
                 await update.message.reply_document(
                     document=f, filename=out_name,
                     caption=(
-                        "🎉✅━━━━━━━━━━━━━━━━━━✅🎉\n"
-                        "   ✅  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹!</b>\n"
-                        "🎉✅━━━━━━━━━━━━━━━━━━✅🎉\n\n"
-                        f"🗂  <b>𝗙𝗶𝗹𝗲</b>    ╌╌  <code>{out_name}</code>\n"
-                        f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌╌  {method}\n\n"
-                        "💚  𝙷𝚊𝚟𝚎 𝚊 𝚗𝚒𝚌𝚎 𝚍𝚊𝚢!  😊"
+                        "╔══════════════════════════╗\n"
+                        "  ✅  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹!</b>\n"
+                        "╚══════════════════════════╝\n\n"
+                        f"🗂  <b>𝗙𝗶𝗹𝗲</b>    ╌  <code>{out_name}</code>\n"
+                        f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌  {method}"
                     ),
                     parse_mode=ParseMode.HTML,
                 )
@@ -520,11 +500,10 @@ async def _do_decode(update, context, doc, fname):
         logger.error(f"Decode error: {e}")
         try:
             await msg.edit_text(
-                "❌🔴━━━━━━━━━━━━━━━━━━🔴❌\n"
-                "    ❌  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗙𝗮𝗶𝗹𝗲𝗱!</b>\n"
-                "❌🔴━━━━━━━━━━━━━━━━━━🔴❌\n\n"
-                f"⚠️  <code>{e}</code>\n\n"
-                "🔁  𝚃𝚛𝚢 𝚊𝚐𝚊𝚒𝚗 𝚘𝚛 𝚌𝚑𝚎𝚌𝚔 𝚝𝚑𝚎 𝚏𝚒𝚕𝚎.",
+                "╔══════════════════╗\n"
+                "  ❌  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗙𝗮𝗶𝗹𝗲𝗱</b>\n"
+                "╚══════════════════╝\n\n"
+                f"<code>{e}</code>",
                 parse_mode=ParseMode.HTML)
         except: pass
 
@@ -533,24 +512,22 @@ async def _do_decode(update, context, doc, fname):
 # ══════════════════════════════════════════════════════
 async def _dev_info(update, context):
     txt = (
-        "🧑‍💻⭐━━━━━━━━━━━━━━━━━━⭐🧑‍💻\n"
-        "      💎  <b>𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿 𝗣𝗿𝗼𝗳𝗶𝗹𝗲</b>\n"
-        "🧑‍💻⭐━━━━━━━━━━━━━━━━━━⭐🧑‍💻\n\n"
-        "🏷️  <b>𝗡𝗮𝗺𝗲</b>    ╌╌  𝘽𝘿 𝘼𝙇𝘼𝙈𝙄𝙉\n\n"
-        "🎯  <b>𝗗𝗿𝗲𝗮𝗺</b>   ╌╌  𝙃𝙖𝙘𝙠𝙞𝙣𝙜 · 𝙏𝙧𝙖𝙙𝙞𝙣𝙜 · 𝙈𝙤𝙣𝙚𝙮\n\n"
-        "💼  <b>𝗙𝗼𝗰𝘂𝘀</b>   ╌╌  𝙱𝚘𝚝 𝙳𝚎𝚟𝚎𝚕𝚘𝚙𝚖𝚎𝚗𝚝\n\n"
-        "🌍  <b>𝗖𝗼𝘂𝗻𝘁𝗿𝘆</b> ╌╌  🇧🇩 𝘽𝙖𝙣𝙜𝙡𝙖𝙙𝙚𝙨𝙝\n\n"
-        "🔥━━━━━━━━━━━━━━━━━━🔥\n"
-        "   🛠️  <b>𝗕𝗼𝘁 𝗘𝗻𝗴𝗶𝗻𝗲𝘀</b>\n"
-        "🔥━━━━━━━━━━━━━━━━━━🔥\n\n"
-        "🔷  ⚡ <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>   ╌╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍\n"
-        "🔷  🔓 <b>𝗥𝗗𝗫 𝘃𝟳.𝟭</b>  ╌╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍\n"
-        "🔷  🖥️ <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>    ╌╌  𝚜𝚝𝚊𝚗𝚍𝚊𝚛𝚍\n\n"
-        "⭐━━━━━━━━━━━━━━━━━━⭐\n\n"
-        "💬  𝙷𝚒𝚝 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚌𝚘𝚗𝚝𝚊𝚌𝚝 ↓"
+        "╔══════════════════════════╗\n"
+        "  🧑‍💻  <b>𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿 𝗣𝗿𝗼𝗳𝗶𝗹𝗲</b>\n"
+        "╚══════════════════════════╝\n\n"
+        "🏷  <b>𝗡𝗮𝗺𝗲</b>   ╌  𝘽𝘿 𝘼𝙇𝘼𝙈𝙄𝙉\n\n"
+        "🎯  <b>𝗗𝗿𝗲𝗮𝗺</b>  ╌  𝙃𝙖𝙘𝙠𝙞𝙣𝙜  ♦  𝙏𝙧𝙖𝙙𝙞𝙣𝙜  ♦  𝙈𝙤𝙣𝙚𝙮\n\n"
+        "💡  <b>𝗪𝗼𝗿𝗸</b>   ╌  𝙉𝙤𝙩 𝘼𝙣𝙮𝙩𝙝𝙞𝙣𝙜\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🛠  <b>𝗕𝗼𝘁 𝗜𝗻𝗳𝗼</b>\n\n"
+        "◈  𝗽𝗵𝗽𝗸𝗼𝗯𝗼  𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "◈  𝗥𝗗𝗫 𝘃𝟳.𝟭  𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "◈  𝗦𝗲𝗿𝘃𝗲𝗿    𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "𝚃𝚑𝚊𝚗𝚔𝚜 𝚏𝚘𝚛 𝚟𝚒𝚜𝚒𝚝𝚒𝚗𝚐!  𝙷𝚒𝚝 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 ↓"
     )
     kb = InlineKeyboardMarkup([[
-        InlineKeyboardButton("💬  𝗖𝗼𝗻𝘁𝗮𝗰𝘁 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿  🚀",
+        InlineKeyboardButton("💬  𝗖𝗼𝗻𝘁𝗮𝗰𝘁 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿",
                              url=f"https://t.me/{OWNER_USERNAME}")
     ]])
     await update.message.reply_html(txt, reply_markup=kb)
@@ -590,23 +567,16 @@ def _panel_text():
     pub  = sum(1 for c in db["channels"] if c.get("type","public") == "public")
     priv = sum(1 for c in db["channels"] if c.get("type") == "private")
     st   = "🟢  𝙾𝚗𝚕𝚒𝚗𝚎" if bot_active() else "🔴  𝙾𝚏𝚏𝚕𝚒𝚗𝚎"
-    pk   = db["stats"].get("phpkobo", 0)
-    rdx  = db["stats"].get("rdx", 0)
-    srv  = db["stats"].get("server", 0)
     return (
-        "👑⚡━━━━━━━━━━━━━━━━━━⚡👑\n"
-        "      🛠️  <b>𝗔𝗱𝗺𝗶𝗻  𝗖𝗼𝗻𝘁𝗿𝗼𝗹  𝗣𝗮𝗻𝗲𝗹</b>\n"
-        "👑⚡━━━━━━━━━━━━━━━━━━⚡👑\n\n"
-        f"🤖  <b>𝗕𝗼𝘁 𝗦𝘁𝗮𝘁𝘂𝘀</b>   ╌╌  {st}\n\n"
-        f"👥  <b>𝗧𝗼𝘁𝗮𝗹 𝗨𝘀𝗲𝗿𝘀</b>  ╌╌  <b>{len(db['users'])}</b>\n"
-        f"📡  <b>𝗣𝘂𝗯 𝗖𝗵𝗮𝗻</b>    ╌╌  <b>{pub}</b>\n"
-        f"🔐  <b>𝗣𝗿𝗶𝘃 𝗖𝗵𝗮𝗻</b>   ╌╌  <b>{priv}</b>\n"
-        f"🛡️  <b>𝗔𝗱𝗺𝗶𝗻𝘀</b>     ╌╌  <b>{len(db['admins'])}</b>\n\n"
-        "🔥━━━━━━━━━━━━━━━━━━🔥\n"
-        f"⚡  <b>𝗣𝗛𝗣𝗞𝗢𝗕𝗢</b>  ╌╌  <b>{pk}</b>   "
-        f"🔓  <b>𝗥𝗗𝗫</b>  ╌╌  <b>{rdx}</b>   "
-        f"🖥️  <b>𝗦𝗿𝘃</b>  ╌╌  <b>{srv}</b>\n"
-        f"📊  <b>𝗧𝗼𝘁𝗮𝗹 𝗗𝗲𝗰𝗼𝗱𝗲𝘀</b>  ╌╌  <b>{db['stats'].get('total_decodes',0)}</b>"
+        "╔══════════════════════════╗\n"
+        "  👑  <b>𝗔𝗱𝗺𝗶𝗻  𝗣𝗮𝗻𝗲𝗹</b>\n"
+        "╚══════════════════════════╝\n\n"
+        f"🤖  <b>𝗦𝘁𝗮𝘁𝘂𝘀</b>    ╌  {st}\n"
+        f"👥  <b>𝗨𝘀𝗲𝗿𝘀</b>     ╌  <b>{len(db['users'])}</b>\n"
+        f"📡  <b>𝗣𝘂𝗯 𝗖𝗵</b>   ╌  <b>{pub}</b>\n"
+        f"🔐  <b>𝗣𝗿𝗶𝘃 𝗖𝗵</b>  ╌  <b>{priv}</b>\n"
+        f"🛡  <b>𝗔𝗱𝗺𝗶𝗻𝘀</b>   ╌  <b>{len(db['admins'])}</b>\n"
+        f"⚡  <b>𝗗𝗲𝗰𝗼𝗱𝗲𝘀</b>  ╌  <b>{db['stats'].get('total_decodes',0)}</b>"
     )
 
 def _panel_kb():
@@ -638,16 +608,14 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not joined:
         n = len(missing)
         await update.message.reply_html(
-            "📡🔒━━━━━━━━━━━━━━━━━━🔒📡\n"
-            "   🔐  <b>𝗖𝗵𝗮𝗻𝗻𝗲𝗹 𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻</b>\n"
-            "📡🔒━━━━━━━━━━━━━━━━━━🔒📡\n\n"
-            f"⚠️  𝙹𝚘𝚒𝚗 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚝𝚘\n"
-            "     𝚞𝚗𝚕𝚘𝚌𝚔 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝. 🔓\n\n"
-            "👇  𝚃𝚊𝚙 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚓𝚘𝚒𝚗, 𝚝𝚑𝚎𝚗\n"
-            "     𝚙𝚛𝚎𝚜𝚜 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 ✅",
+            "╔══════════════════════════╗\n"
+            "  📡  <b>𝗖𝗵𝗮𝗻𝗻𝗲𝗹 𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻</b>\n"
+            "╚══════════════════════════╝\n\n"
+            f"𝙹𝚘𝚒𝚗 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚝𝚘 𝚞𝚜𝚎 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝.\n\n"
+            "𝚃𝚊𝚙 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚓𝚘𝚒𝚗, 𝚝𝚑𝚎𝚗 𝚙𝚛𝚎𝚜𝚜 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 ↓",
             reply_markup=joined_reply_kb(),
         )
-        await update.message.reply_text("📢  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀 𝘁𝗼 𝗝𝗼𝗶𝗻 👇", reply_markup=channels_inline_kb(missing))
+        await update.message.reply_text("🗂  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀 𝘁𝗼 𝗝𝗼𝗶𝗻:", reply_markup=channels_inline_kb(missing))
         return
     await send_welcome(context.bot, user.id, user.first_name)
 
@@ -702,12 +670,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not joined:
             n = len(missing)
             await update.message.reply_html(
-                "⚠️🔴━━━━━━━━━━━━━━━━━━🔴⚠️\n"
-                f"  ❌  <b>𝗡𝗼𝘁 𝗬𝗲𝘁!</b>  𝚂𝚝𝚒𝚕𝚕 <b>{n}</b> 𝚙𝚎𝚗𝚍𝚒𝚗𝚐\n"
-                "⚠️🔴━━━━━━━━━━━━━━━━━━🔴⚠️\n\n"
-                "👇  𝙹𝚘𝚒𝚗 𝚛𝚎𝚖𝚊𝚒𝚗𝚒𝚗𝚐 𝚌𝚑𝚊𝚗𝚗𝚎𝚕𝚜 ↓",
+                f"⚠️  <b>𝗡𝗼𝘁 𝗬𝗲𝘁!</b>  𝚂𝚝𝚒𝚕𝚕 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚙𝚎𝚗𝚍𝚒𝚗𝚐 ↓",
                 reply_markup=joined_reply_kb())
-            await update.message.reply_text("📢  𝗣𝗲𝗻𝗱𝗶𝗻𝗴 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀 👇", reply_markup=channels_inline_kb(missing))
+            await update.message.reply_text("🗂  𝗣𝗲𝗻𝗱𝗶𝗻𝗴 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing))
             return
         if is_banned(user.id): await update.message.reply_html(ban_text(user.id)); return
         await send_welcome(context.bot, user.id, user.first_name); return
@@ -717,12 +682,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not joined:
             n = len(missing)
             await update.message.reply_html(
-                "🔒⚡━━━━━━━━━━━━━━━━━━⚡🔒\n"
-                f"  📡  <b>𝗝𝗼𝗶𝗻 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱!</b>  {n} 𝚙𝚎𝚗𝚍𝚒𝚗𝚐\n"
-                "🔒⚡━━━━━━━━━━━━━━━━━━⚡🔒\n\n"
-                "👇  𝙹𝚘𝚒𝚗 𝚝𝚘 𝚞𝚗𝚕𝚘𝚌𝚔 𝙳𝚎𝚌𝚘𝚍𝚎𝚛 ↓",
+                f"📡  <b>𝗝𝗼𝗶𝗻 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱</b>  ╌  𝙹𝚘𝚒𝚗 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚏𝚒𝚛𝚜𝚝 ↓",
                 reply_markup=joined_reply_kb())
-            await update.message.reply_text("📢  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀 𝘁𝗼 𝗝𝗼𝗶𝗻 👇", reply_markup=channels_inline_kb(missing)); return
+            await update.message.reply_text("🗂  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing)); return
         await _decode_start(update, context)
 
     elif "𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿" in text or "Developer" in text:
@@ -730,15 +692,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not joined:
             n = len(missing)
             await update.message.reply_html(
-                "🔒🧑‍💻━━━━━━━━━━━━━━━━━━🧑‍💻🔒\n"
-                f"  📡  <b>𝗝𝗼𝗶𝗻 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱!</b>  {n} 𝚙𝚎𝚗𝚍𝚒𝚗𝚐\n"
-                "🔒🧑‍💻━━━━━━━━━━━━━━━━━━🧑‍💻🔒\n\n"
-                "👇  𝙹𝚘𝚒𝚗 𝚝𝚘 𝚜𝚎𝚎 𝙳𝚎𝚟 𝙿𝚛𝚘𝚏𝚒𝚕𝚎 ↓",
+                f"📡  <b>𝗝𝗼𝗶𝗻 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱</b>  ╌  𝙹𝚘𝚒𝚗 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚏𝚒𝚛𝚜𝚝 ↓",
                 reply_markup=joined_reply_kb())
-            await update.message.reply_text("📢  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀 𝘁𝗼 𝗝𝗼𝗶𝗻 👇", reply_markup=channels_inline_kb(missing)); return
+            await update.message.reply_text("🗂  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing)); return
         await _dev_info(update, context)
 
-    # Statistics removed from user menu — admin-only via panel
+    # Statistics hidden from users — accessible via admin panel only
 
 # ══════════════════════════════════════════════════════
 #   ADMIN CALLBACK ROUTER
