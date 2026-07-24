@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import asyncio, os, re, pickle, logging, tempfile, base64, html as html_module
+import asyncio, os, re, pickle, logging, tempfile, shutil
 from datetime import datetime
 from threading import Thread
 from dotenv import load_dotenv
@@ -25,14 +25,21 @@ flask_app = Flask(__name__)
 def home(): return "Bot is alive!"
 def run_flask(): flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
+# ══════════════════════════════════════════════════════
+#   DATABASE
+# ══════════════════════════════════════════════════════
 def _default_db():
-    return {"users": {}, "admins": [], "channels": [], "settings": {"bot_active": True}, "stats": {"total_decodes": 0}}
+    return {"users": {}, "admins": [], "channels": [],
+            "settings": {"bot_active": True},
+            "stats": {"total_decodes": 0, "phpkobo": 0, "rdx": 0, "server": 0}}
 
 def load_db():
     if os.path.exists(DB_FILE):
         try:
             with open(DB_FILE, "rb") as f: data = pickle.load(f)
             for k, v in _default_db().items(): data.setdefault(k, v)
+            if "phpkobo" not in data["stats"]:
+                data["stats"].update({"phpkobo": 0, "rdx": 0, "server": 0})
             return data
         except Exception as e: logger.error(f"DB load error: {e}")
     return _default_db()
@@ -59,7 +66,8 @@ def register_user(user):
 
 async def check_channels(bot, uid):
     if not db["channels"]: return True, []
-    acked, missing = db["users"].get(uid, {}).get("private_acked", []), []
+    acked = db["users"].get(uid, {}).get("private_acked", [])
+    missing = []
     for ch in db["channels"]:
         try:
             m = await bot.get_chat_member(ch["id"], uid)
@@ -67,6 +75,21 @@ async def check_channels(bot, uid):
         except Exception:
             if not (ch.get("type") == "private" and ch["id"] in acked): missing.append(ch)
     return len(missing) == 0, missing
+
+# ══════════════════════════════════════════════════════
+#   NODE.JS CHECK  (for RDX engine)
+# ══════════════════════════════════════════════════════
+def get_node_path():
+    node = shutil.which("node") or shutil.which("nodejs")
+    return node
+
+def check_node_js():
+    node = get_node_path()
+    if node:
+        logger.info(f"✔  Node.js found → {node}")
+    else:
+        logger.warning("⚠  Node.js NOT found — RDX engine will fall back to browser render.")
+    return node
 
 # ══════════════════════════════════════════════════════
 #   KEYBOARDS
@@ -79,51 +102,54 @@ def channels_inline_kb(missing):
     return InlineKeyboardMarkup(rows)
 
 def joined_reply_kb():
-    return ReplyKeyboardMarkup([["✅  𝗜'𝘃𝗲 𝗝𝗼𝗶𝗻𝗲𝗱 𝗔𝗹𝗹 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀"]], resize_keyboard=True, one_time_keyboard=True)
+    return ReplyKeyboardMarkup(
+        [["✅  𝗜'𝘃𝗲 𝗝𝗼𝗶𝗻𝗲𝗱 𝗔𝗹𝗹 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀"]],
+        resize_keyboard=True, one_time_keyboard=True
+    )
 
 def main_kb():
     return ReplyKeyboardMarkup(
-        [["⚡  𝗛𝗧𝗠𝗟 𝗗𝗲𝗰𝗼𝗱𝗲𝗿",  "🧑‍💻  𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿"]],
+        [["⚡  𝗛𝗧𝗠𝗟 𝗗𝗲𝗰𝗼𝗱𝗲𝗿",  "🧑‍💻  𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿"],
+         ["📊  𝗦𝘁𝗮𝘁𝗶𝘀𝘁𝗶𝗰𝘀"]],
         resize_keyboard=True,
     )
 
 # ══════════════════════════════════════════════════════
-#   WELCOME
+#   WELCOME  — NEW DESIGN  (3 Engines, New Font)
 # ══════════════════════════════════════════════════════
 async def send_welcome(bot, chat_id, first_name):
     txt = (
-        "╭━━━━━━━━━━━━━━━━━━━━━━━━━━╮\n"
+        "╔══════════════════════════════╗\n"
         "  🧬  <b>𝗛𝗧𝗠𝗟  𝗗𝗘𝗖𝗢𝗗𝗘𝗥  𝗕𝗢𝗧</b>\n"
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
-        f"👾  𝖧𝖾𝗒 <b>{first_name}</b>!  𝖶𝖾𝗅𝖼𝗈𝗆𝖾 𝖺𝖻𝗈𝖺𝗋𝖽.\n\n"
+        "╚══════════════════════════════╝\n\n"
+        f"👾  𝒲𝑒𝓁𝒸𝑜𝓂𝑒,  <b>{first_name}</b>!\n\n"
         "𝙸 𝚌𝚊𝚗 𝚒𝚗𝚜𝚝𝚊𝚗𝚝𝚕𝚢 𝚍𝚎𝚌𝚛𝚢𝚙𝚝 𝚊𝚗𝚢\n"
         "𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 𝚢𝚘𝚞 𝚜𝚎𝚗𝚍.\n\n"
-        "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
-        "⚙️  <b>𝗗𝗲𝗰𝗿𝘆𝗽𝘁𝗶𝗼𝗻 𝗘𝗻𝗴𝗶𝗻𝗲𝘀</b>\n"
-        "◈  ⚡ <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>   ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍𝖾𝖽\n"
-        "◈  🔴 <b>𝗥𝗗𝗫 𝗩𝟳.𝟭</b>  ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍𝖾𝖽\n"
-        "◈  🖥️ <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>   ╌  𝗌𝗍𝖺𝗇𝖽𝖺𝗋𝖽 𝖾𝗇𝖼\n"
-        "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n\n"
-        "𝖴𝗌𝖾 𝗍𝗁𝖾 𝗆𝖾𝗇𝗎 𝖻𝖾𝗅𝗈𝗐 𝗍𝗈 𝗀𝖾𝗍 𝗌𝗍𝖺𝗋𝗍𝖾𝖽 ↓"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "〔 ⚙️  <b>𝗗𝗲𝗰𝗿𝘆𝗽𝘁𝗶𝗼𝗻 𝗘𝗻𝗴𝗶𝗻𝗲𝘀</b> 〕\n\n"
+        "◈  ⚡ <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>   ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍\n"
+        "◈  🔓 <b>𝗥𝗗𝗫 𝘃𝟳.𝟭</b>  ╌  𝖺𝗎𝗍𝗈-𝖽𝖾𝗍𝖾𝖼𝗍  🆕\n"
+        "◈  🖥️ <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>    ╌  𝚜𝚝𝚊𝚗𝚍𝚊𝚛𝚍 𝚎𝚗𝚌\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "🔻  𝚄𝚜𝚎 𝚝𝚑𝚎 𝚖𝚎𝚗𝚞 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚜𝚝𝚊𝚛𝚝 ↓"
     )
     await bot.send_message(chat_id, txt, parse_mode=ParseMode.HTML, reply_markup=main_kb())
 
 def ban_text(uid):
     return (
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "╔══════════════════════╗\n"
         "  🚷  <b>𝗔𝗖𝗖𝗘𝗦𝗦  𝗗𝗘𝗡𝗜𝗘𝗗</b>\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        "╚══════════════════════╝\n\n"
         "𝚈𝚘𝚞 𝚑𝚊𝚟𝚎 𝚋𝚎𝚎𝚗 <b>𝗯𝗮𝗻𝗻𝗲𝗱</b> 𝚏𝚛𝚘𝚖 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝.\n\n"
         f"🪪  <b>𝗬𝗼𝘂𝗿 𝗜𝗗</b>  ╌  <code>{uid}</code>\n"
         f"👑  <b>𝗢𝘄𝗻𝗲𝗿</b>   ╌  @{OWNER_USERNAME}\n\n"
-        "𝙲𝚘𝚗𝚝𝚊𝚌𝚝 𝚝𝚑𝚎 𝙾𝚠𝚗𝚎𝚛 𝚠𝚒𝚝𝚑 𝚢𝚘𝚞𝚛 𝙸𝙳 𝚝𝚘 𝚛𝚎𝚚𝚞𝚎𝚜𝚝 𝚞𝚗𝚋𝚊𝚗."
+        "𝙲𝚘𝚗𝚝𝚊𝚌𝚝 𝚝𝚑𝚎 𝙾𝚠𝚗𝚎𝚛 𝚠𝚒𝚝𝚑 𝚢𝚘𝚞𝚛 𝙸𝙳."
     )
 
 # ══════════════════════════════════════════════════════
-#   BROWSER RENDERER  (returns html + screenshot bytes)
+#   BROWSER RENDERER  (Server Engine)
 # ══════════════════════════════════════════════════════
 async def render_html(path):
-    """Load HTML in headless browser -> returns (decoded_html, screenshot_bytes)."""
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])
         page    = await browser.new_page(viewport={"width": 1280, "height": 800})
@@ -135,7 +161,6 @@ async def render_html(path):
     return html, screenshot
 
 async def take_screenshot(html_path):
-    """Load an already-decoded HTML file and capture a full-page screenshot."""
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])
         page    = await browser.new_page(viewport={"width": 1280, "height": 800})
@@ -146,7 +171,7 @@ async def take_screenshot(html_path):
     return screenshot
 
 # ══════════════════════════════════════════════════════
-#   PHPKOBO ENGINE
+#   PHPKOBO ENGINE  (unchanged logic)
 # ══════════════════════════════════════════════════════
 def _js_unescape(s):
     s = s.replace('\n', '\\n')
@@ -194,445 +219,238 @@ def decode_phpkobo(html):
     return r
 
 # ══════════════════════════════════════════════════════
-#   RDX DECODER V7.1 ENGINE
-#   Supports: @HTMLObfuscateBot / @ScriptDevX pattern
-#             + packer, atob, fromCharCode, unescape, hex
+#   RDX DECODER v7.1 ENGINE  (Node.js subprocess)
 # ══════════════════════════════════════════════════════
-
-def _extract_int_array(name, text):
-    """Extract a named JS integer array from script text."""
-    m = re.search(rf'{re.escape(name)}\s*=\s*\[([^\]]+)\]', text)
-    if m:
-        try:
-            return [int(float(x.strip())) for x in m.group(1).split(',')]
-        except Exception:
-            return None
-    return None
-
-def detect_rdx(html_content):
-    """
-    Auto-detect RDX V7.1 encoded HTML files.
-    Checks @HTMLObfuscateBot signature first, then generic patterns.
-    """
-    # Primary: @HTMLObfuscateBot / @ScriptDevX signature
-    if ('HTMLObfuscateBot' in html_content or 'ScriptDevX' in html_content or
-            'HTMLOBF_PROTECTED' in html_content):
-        return True
-
-    # Secondary: state-machine + large byte arrays pattern (same obfuscator without header)
-    sc_m = re.search(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
-    if sc_m:
-        sc = sc_m.group(1)
-        # Look for 4+ large numeric arrays + RC4-like pattern
-        large_arrays = re.findall(r'=\s*\[\d+(?:,\s*\d+){200,}\]', sc)
-        if len(large_arrays) >= 4 and 'String.fromCharCode' in sc and '.charCodeAt(' in sc:
+def detect_rdx(html: str) -> bool:
+    """Detect RDX obfuscation — Pattern 1 / 2 / 3."""
+    for sm in re.finditer(r'<script[^>]*>([\s\S]*?)<\/script>', html, re.IGNORECASE):
+        sc = sm.group(1)
+        if len(sc) < 400: continue
+        # P1: (0,eval)(varName);
+        if re.search(r'\(0,eval\)\(\w+\)\s*;', sc):
             return True
-        # Dean Edwards packer
-        if re.search(r'eval\s*\(\s*function\s*\(\s*p\s*,\s*a\s*,\s*c\s*,\s*k\s*,\s*e\s*,\s*[dr]\s*\)', sc):
+        # P3: try { (0,eval)(varName) } catch
+        if re.search(r'try\s*\{\s*\(0,eval\)\(\w+\)\s*\}\s*catch', sc):
             return True
-        # Base64 eval
-        if re.search(r'eval\s*\(\s*atob\s*\(', sc):
+        # P2: while(...) + document.write / document.open
+        if re.search(r'while\s*\(', sc) and re.search(r'document\s*\.\s*(?:write|open)\s*\(', sc):
             return True
-        # unescape / fromCharCode / hex eval
-        if re.search(r'document\.write\s*\(\s*unescape\s*\(', sc):
-            return True
-        if re.search(r'String\.fromCharCode\s*\((?:\d+\s*,\s*){20,}', sc):
-            return True
-        if re.search(r'eval\s*\(\s*["\']\\x', sc):
-            return True
-
     return False
 
-def _rdx_decode_htmlobfbot(html_content):
+async def decode_rdx(in_path: str, out_path: str) -> str:
     """
-    Decode @HTMLObfuscateBot / @ScriptDevX multi-layer obfuscation.
-    Algorithm (in order):
-      1. Concat 4 byte arrays
-      2. XOR with key1
-      3. Block-shuffle (16-byte blocks) with perm1
-      4. Substitution table sub1
-      5. XOR with key2
-      6. Subtract key3 (mod 256)
-      7. XOR cascade (seed=184)
-      8. Bit-rotate per position index
-      9. Block-shuffle (16-byte blocks) with perm2
-     10. Substitution table sub3
-     11. RC4 with rc4key
-     12. bytes → latin-1 → escape/unescape → result
+    Decode HTML using RDX Decoder v7.1 via Node.js subprocess.
+    Writes decoded output to out_path and returns the HTML string.
     """
-    sc_m = re.search(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
-    if not sc_m:
-        return None
-    sc = sc_m.group(1)
+    node = get_node_path()
+    if not node:
+        raise FileNotFoundError("Node.js not installed — RDX engine unavailable.")
 
-    # Discover the 4 data arrays by size (≥500 elements each, values 0-255)
-    # They are always concatenated in the same order they appear in the script
-    all_arrays = re.finditer(r'(\b_[A-Za-z0-9_]+)\s*=\s*\[(\d+(?:,\s*(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*){100,})\]', sc)
-    byte_arrays = []
-    for m in all_arrays:
-        vals = [int(float(x.strip())) for x in m.group(2).split(',')]
-        if all(0 <= v <= 255 for v in vals) and len(vals) >= 100:
-            byte_arrays.append((m.group(1), vals))
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "RDX_DECODER_v7_1.js")
+    if not os.path.exists(script):
+        raise FileNotFoundError("RDX_DECODER_v7_1.js not found next to main.py.")
 
-    if len(byte_arrays) < 4:
-        return None  # Not enough data arrays
-
-    # The 4 largest arrays are the payload; sub tables (256 elements) are separate
-    sub_arrays   = [a for a in byte_arrays if len(a[1]) == 256]
-    data_arrays  = [a for a in byte_arrays if len(a[1]) > 256]
-
-    if len(data_arrays) < 4 or len(sub_arrays) < 2:
-        return None
-
-    # Also find int arrays > 256 (permutation tables with block indices)
-    all_int_arrays = re.finditer(r'(\b_[A-Za-z0-9_]+)\s*=\s*\[(\d+(?:,\s*(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*){100,})\]', sc)
-    perm_arrays = []
-    for m in all_int_arrays:
-        vals = [int(float(x.strip())) for x in m.group(2).split(',')]
-        if max(vals) > 255 and len(vals) > 100:
-            perm_arrays.append((m.group(1), vals))
-
-    if len(perm_arrays) < 2:
-        return None
-
-    # Key arrays (32 bytes, 0-255)
-    key_arrays = [a for a in byte_arrays if 16 <= len(a[1]) <= 64]
-    if len(key_arrays) < 4:
-        return None
-
-    # Named variable extraction for known variable patterns
-    # Try to find the specific variables by name pattern used by obfuscator
-    # Fallback: use positional order found in script
-
-    # Build data
-    arr_vals = [a[1] for a in data_arrays[:4]]
-    data = arr_vals[0] + arr_vals[1] + arr_vals[2] + arr_vals[3]
-    N = len(data)
-    blocks = N // 16
-
-    # Keys in order of appearance
-    keys = [a[1] for a in key_arrays]
-    subs = [a[1] for a in sub_arrays]
-    perms = [a[1] for a in perm_arrays[:2]]
-
-    xor1  = keys[0]
-    xor2  = keys[1] if len(keys) > 1 else keys[0]
-    sub2  = keys[2] if len(keys) > 2 else keys[0]
-    rc4k  = keys[3] if len(keys) > 3 else keys[0]
-    perm1 = perms[0]
-    perm2 = perms[1]
-    sub1  = subs[0]
-    sub3  = subs[1] if len(subs) > 1 else subs[0]
-
+    proc = await asyncio.create_subprocess_exec(
+        node, script, in_path, out_path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
     try:
-        # Step 2: XOR key1
-        for i in range(N):
-            data[i] ^= xor1[i % len(xor1)]
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=90)
+    except asyncio.TimeoutError:
+        proc.kill()
+        raise TimeoutError("RDX decoder timed out (90 s).")
 
-        # Step 3: Block shuffle perm1
-        W = [0]*N
-        for i in range(blocks):
-            src = perm1[i] * 16
-            dst = i * 16
-            W[dst:dst+16] = data[src:src+16]
-        data = W
+    if proc.returncode != 0:
+        err = stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"RDX node error: {err[:300]}")
 
-        # Step 4: Substitution sub1
-        for i in range(N):
-            data[i] = sub1[data[i]]
-
-        # Step 5: XOR key2
-        for i in range(N):
-            data[i] ^= xor2[i % len(xor2)]
-
-        # Step 6: Subtract key3
-        for i in range(N):
-            data[i] = (data[i] - sub2[i % len(sub2)] + 256) & 255
-
-        # Step 7: XOR cascade seed=184
-        prev = 184
-        for i in range(N):
-            orig = data[i]; data[i] ^= prev; prev = orig
-
-        # Step 8: Bit rotation per index
-        for i in range(N):
-            r = i & 7
-            if r > 0:
-                data[i] = ((data[i] >> r) | (data[i] << (8 - r))) & 255
-
-        # Step 9: Block shuffle perm2
-        W = [0]*N
-        for i in range(blocks):
-            src = perm2[i] * 16
-            dst = i * 16
-            W[dst:dst+16] = data[src:src+16]
-        data = W
-
-        # Step 10: Substitution sub3
-        for i in range(N):
-            data[i] = sub3[data[i]]
-
-        # Step 11: RC4
-        S = list(range(256)); j2 = 0
-        for i in range(256):
-            j2 = (j2 + S[i] + rc4k[i % len(rc4k)]) & 255
-            S[i], S[j2] = S[j2], S[i]
-        i2 = j2 = 0
-        for k in range(N):
-            i2 = (i2 + 1) & 255
-            j2 = (j2 + S[i2]) & 255
-            S[i2], S[j2] = S[j2], S[i2]
-            data[k] ^= S[(S[i2] + S[j2]) & 255]
-
-        # Step 12: bytes → string
-        raw = bytes(data)
-        try:
-            result = raw.decode('utf-8')
-        except Exception:
-            import urllib.parse
-            result = urllib.parse.unquote(raw.decode('latin-1'))
-
-        if len(result) > 100 and ('<' in result or 'document' in result or 'window' in result):
-            return result
-
-    except Exception:
-        pass
-    return None
-
-def _rdx_decode_packer(sc):
-    """Decode Dean Edwards p,a,c,k,e,d packer."""
-    m = re.search(
-        r"eval\s*\(\s*function\s*\(p,a,c,k,e,(?:r|d)\)\s*\{.*?\}\s*\('(.*?)',\s*(\d+),\s*(\d+),\s*'(.*?)'\.split\('\|'\)",
-        sc, re.DOTALL)
-    if not m:
-        return None
-    payload, base, keys_str = m.group(1), int(m.group(2)), m.group(4)
-    keys = keys_str.split('|')
-    def lookup(word):
-        try:
-            idx = int(word, base)
-            if idx < len(keys) and keys[idx]:
-                return keys[idx]
-        except Exception:
-            pass
-        return word
-    return re.sub(r'\b(\w+)\b', lambda x: lookup(x.group(0)), payload)
-
-def _rdx_decode_atob(sc):
-    m = re.search(r'eval\s*\(\s*atob\s*\(\s*["\']([A-Za-z0-9+/=]+)["\']\s*\)', sc)
-    if not m:
-        return None
-    try:
-        return base64.b64decode(m.group(1)).decode('utf-8', errors='replace')
-    except Exception:
-        return None
-
-def _rdx_decode_fromcharcode(sc):
-    m = re.search(r'String\.fromCharCode\s*\(([\d\s,]+)\)', sc)
-    if not m:
-        return None
-    try:
-        codes = [int(x.strip()) for x in m.group(1).split(',') if x.strip().isdigit()]
-        return ''.join(chr(c) for c in codes)
-    except Exception:
-        return None
-
-def _rdx_decode_unescape(sc):
-    m = re.search(r'unescape\s*\(\s*["\']([%0-9a-fA-F]+)["\']\s*\)', sc)
-    if not m:
-        return None
-    try:
-        import urllib.parse
-        return urllib.parse.unquote(m.group(1))
-    except Exception:
-        return None
-
-def _rdx_decode_hex_eval(sc):
-    m = re.search(r'eval\s*\(\s*["\']((\\x[0-9a-fA-F]{2})+)["\']\s*\)', sc)
-    if not m:
-        return None
-    try:
-        return re.sub(r'\\x([0-9a-fA-F]{2})', lambda h: chr(int(h.group(1), 16)), m.group(1))
-    except Exception:
-        return None
-
-def decode_rdx(html_content):
-    """
-    RDX DECODER V7.1 — Multi-method auto decoder.
-    Priority:
-      1. @HTMLObfuscateBot / @ScriptDevX (multi-layer RC4+shuffle+XOR)
-      2. Dean Edwards packer
-      3. eval(atob(...))
-      4. String.fromCharCode
-      5. unescape(%xx)
-      6. hex eval
-    """
-    # Method 1: @HTMLObfuscateBot multi-layer
-    result = _rdx_decode_htmlobfbot(html_content)
-    if result:
-        return result if result.strip().startswith('<') else \
-               f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{result}</body></html>"
-
-    # Methods 2-6: inline script fallbacks
-    scripts = re.findall(r'<script[^>]*>([\s\S]*?)<\/script>', html_content, re.IGNORECASE)
-    for sc in scripts:
-        sc = sc.strip()
-        if not sc:
-            continue
-        for fn in [_rdx_decode_packer, _rdx_decode_atob,
-                   _rdx_decode_fromcharcode, _rdx_decode_unescape, _rdx_decode_hex_eval]:
-            try:
-                r = fn(sc)
-                if r and len(r) > 30:
-                    return r if r.strip().startswith('<') else \
-                           f"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>{html_module.unescape(r)}</body></html>"
-            except Exception:
-                continue
-
-    raise ValueError("RDX V7.1: No recognizable encoding pattern found in this file.")
+    with open(out_path, "r", encoding="utf-8", errors="replace") as f:
+        return f.read()
 
 # ══════════════════════════════════════════════════════
-#   DECODE STEP 1 — READY
+#   INIT ANIMATION  — New Braille Spinner
 # ══════════════════════════════════════════════════════
+_INIT_FRAMES = [
+    "⠋  𝙱𝚘𝚘𝚝𝚒𝚗𝚐 𝚜𝚢𝚜𝚝𝚎𝚖...",
+    "⠙  𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙲𝚘𝚛𝚎...",
+    "⠸  𝙸𝚗𝚒𝚝 𝙴𝚗𝚐𝚒𝚗𝚎𝚜...",
+    "⠼  𝙲𝚊𝚕𝚒𝚋𝚛𝚊𝚝𝚒𝚗𝚐...",
+    "⠤  𝙳𝚒𝚊𝚐𝚗𝚘𝚜𝚝𝚒𝚌𝚜...",
+    "⠦  𝚅𝚎𝚛𝚒𝚏𝚢𝚒𝚗𝚐...",
+    "⡀  𝙶𝚎𝚝𝚝𝚒𝚗𝚐 𝚛𝚎𝚊𝚍𝚢...",
+    "✦  𝗔𝗟𝗟  𝗦𝗬𝗦𝗧𝗘𝗠𝗦  𝗚𝗢!",
+]
+
 async def _decode_start(update, context):
-    msg = await update.message.reply_text("◌")
-    for frame in [
-        "◌  𝙸𝚗𝚒𝚝𝚒𝚊𝚕𝚒𝚣𝚒𝚗𝚐...",
-        "◈  𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝚎𝚗𝚐𝚒𝚗𝚎𝚜...",
-        "◉  𝙲𝚊𝚕𝚒𝚋𝚛𝚊𝚝𝚒𝚗𝚐 𝚙𝚒𝚙𝚎𝚕𝚒𝚗𝚎...",
-        "⊛  𝚁𝚞𝚗𝚗𝚒𝚗𝚐 𝚍𝚒𝚊𝚐𝚗𝚘𝚜𝚝𝚒𝚌𝚜...",
-        "⊕  𝙰𝚕𝚕 𝚜𝚢𝚜𝚝𝚎𝚖𝚜 𝚛𝚎𝚊𝚍𝚢...",
-        "✦  𝚂𝚢𝚜𝚝𝚎𝚖 𝚁𝚎𝚊𝚍𝚢!",
-    ]:
-        await asyncio.sleep(0.5)
+    msg = await update.message.reply_text("⠿  𝙸𝚗𝚒𝚝𝚒𝚊𝚕𝚒𝚣𝚒𝚗𝚐...")
+    for frame in _INIT_FRAMES:
+        await asyncio.sleep(0.45)
         try: await msg.edit_text(frame)
         except: pass
-    await asyncio.sleep(0.6)
+    await asyncio.sleep(0.5)
     try: await msg.delete()
     except: pass
+
     context.user_data["waiting_for_html"] = True
     await update.message.reply_html(
-        "╭━━━━━━━━━━━━━━━━━━━━━━╮\n"
+        "╔══════════════════════════╗\n"
         "  🗂  <b>𝗦𝗲𝗻𝗱 𝗬𝗼𝘂𝗿 𝗙𝗶𝗹𝗲</b>\n"
-        "╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        "╚══════════════════════════╝\n\n"
         "𝚂𝚎𝚗𝚍 𝚢𝚘𝚞𝚛 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚎𝚍 <b>.html</b> 𝚏𝚒𝚕𝚎 ↓\n\n"
-        "🔸  <b>𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱:</b>  .html  ╌  .htm"
+        "🔸  <b>𝗦𝘂𝗽𝗽𝗼𝗿𝘁𝗲𝗱:</b>  .html  ╌  .htm\n\n"
+        "〔 𝙰𝚞𝚝𝚘-𝙳𝚎𝚝𝚎𝚌𝚝𝚜:  𝗽𝗵𝗽𝗸𝗼𝗯𝗼  ·  𝗥𝗗𝗫  ·  𝗦𝗲𝗿𝘃𝗲𝗿 〕"
     )
 
 # ══════════════════════════════════════════════════════
-#   PHPKOBO CHECKLIST ANIMATION
+#   PHPKOBO  CHECKLIST  ANIMATION
 # ══════════════════════════════════════════════════════
 _PK = [
-    ("🔎", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗 𝚝𝚢𝚙𝚎  ╌  𝗽𝗵𝗽𝗸𝗼𝗯𝗼"),
-    ("🔑", "𝙵𝚞𝚗𝚌𝚝𝚒𝚘𝚗 𝚠𝚛𝚊𝚙𝚙𝚎𝚛 𝚕𝚘𝚌𝚊𝚝𝚎𝚍"),
-    ("📦", "𝙿𝚊𝚢𝚕𝚘𝚊𝚍 𝚎𝚡𝚝𝚛𝚊𝚌𝚝𝚎𝚍"),
-    ("🧩", "𝙱-𝙼𝚊𝚛𝚔𝚎𝚛 𝚏𝚘𝚞𝚗𝚍"),
-    ("📐", "𝙲𝚒𝚙𝚑𝚎𝚛 𝚑𝚎𝚊𝚍𝚎𝚛 𝚊𝚗𝚊𝚕𝚢𝚣𝚎𝚍"),
-    ("🔓", "𝙱𝚢𝚝𝚎𝚜 𝚍𝚎𝚌𝚛𝚢𝚙𝚝𝚎𝚍"),
-    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚜𝚊𝚟𝚎𝚍"),
+    ("🔎", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗽𝗵𝗽𝗸𝗼𝗯𝗼"),
+    ("🔑", "𝙵𝚞𝚗𝚌𝚝𝚒𝚘𝚗 𝚆𝚛𝚊𝚙𝚙𝚎𝚛 𝙻𝚘𝚌𝚊𝚝𝚎𝚍"),
+    ("📦", "𝙿𝚊𝚢𝚕𝚘𝚊𝚍 𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚎𝚍"),
+    ("🧩", "𝙱-𝙼𝚊𝚛𝚔𝚎𝚛 𝙵𝚘𝚞𝚗𝚍"),
+    ("📐", "𝙲𝚒𝚙𝚑𝚎𝚛 𝙷𝚎𝚊𝚍𝚎𝚛 𝙰𝚗𝚊𝚕𝚢𝚣𝚎𝚍"),
+    ("🔓", "𝙱𝚢𝚝𝚎𝚜 𝙳𝚎𝚌𝚛𝚢𝚙𝚝𝚎𝚍"),
+    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍"),
 ]
 
 def _pk_msg(cur):
-    h = "⚡  <b>𝗣𝗛𝗣𝗞𝗢𝗕𝗢  𝗗𝗲𝗰𝗿𝘆𝗽𝘁𝗶𝗼𝗻  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
+    h = "⚡  <b>𝗣𝗛𝗣𝗞𝗢𝗕𝗢  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
     lines = []
-    for i,(icon,label) in enumerate(_PK):
-        if i < cur:   lines.append(f"  ✦  {icon}  {label}")
-        elif i == cur: lines.append(f"  ⟳  {icon}  {label}...")
-        else:          lines.append(f"  ◌  {icon}  {label}")
-    return h + "\n".join(lines)
-
-# ══════════════════════════════════════════════════════
-#   RDX CHECKLIST ANIMATION
-# ══════════════════════════════════════════════════════
-_RDX = [
-    ("🔎", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗 𝚝𝚢𝚙𝚎  ╌  𝗥𝗗𝗫 𝗩𝟳.𝟭"),
-    ("🔬", "𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝚜𝚌𝚛𝚒𝚙𝚝 𝚕𝚊𝚢𝚎𝚛𝚜"),
-    ("🧩", "𝙴𝚗𝚌𝚘𝚍𝚒𝚗𝚐 𝚙𝚊𝚝𝚝𝚎𝚛𝚗 𝚒𝚍𝚎𝚗𝚝𝚒𝚏𝚒𝚎𝚍"),
-    ("📦", "𝙿𝚊𝚢𝚕𝚘𝚊𝚍 𝚎𝚡𝚝𝚛𝚊𝚌𝚝𝚎𝚍"),
-    ("🔑", "𝙳𝚎𝚌𝚘𝚍𝚎 𝚔𝚎𝚢 𝚛𝚎𝚜𝚘𝚕𝚟𝚎𝚍"),
-    ("🔓", "𝙻𝚊𝚢𝚎𝚛𝚜 𝚍𝚎𝚌𝚛𝚢𝚙𝚝𝚎𝚍"),
-    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚜𝚊𝚟𝚎𝚍"),
-]
-
-def _rdx_msg(cur):
-    h = "🔴  <b>𝗥𝗗𝗫  𝗗𝗘𝗖𝗢𝗗𝗘𝗥  𝗩𝟳.𝟭  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
-    lines = []
-    for i,(icon,label) in enumerate(_RDX):
+    for i, (icon, label) in enumerate(_PK):
         if i < cur:    lines.append(f"  ✦  {icon}  {label}")
         elif i == cur: lines.append(f"  ⟳  {icon}  {label}...")
         else:          lines.append(f"  ◌  {icon}  {label}")
     return h + "\n".join(lines)
 
 # ══════════════════════════════════════════════════════
-#   BROWSER PROGRESS BAR ANIMATION
+#   RDX v7.1  CHECKLIST  ANIMATION  (NEW)
+# ══════════════════════════════════════════════════════
+_RDX = [
+    ("🔍", "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗥𝗗𝗫 𝘃𝟳.𝟭"),
+    ("🧬", "𝙱𝚕𝚘𝚌𝚔 𝙳𝚎𝚝𝚎𝚌𝚝𝚒𝚘𝚗"),
+    ("⚙️", "𝚂𝚊𝚗𝚍𝚋𝚘𝚡 𝙸𝚗𝚒𝚝𝚒𝚊𝚕𝚒𝚣𝚒𝚗𝚐"),
+    ("🔑", "𝙻𝚊𝚢𝚎𝚛 𝟷  𝙳𝚎𝚌𝚘𝚍𝚒𝚗𝚐"),
+    ("🔓", "𝙻𝚊𝚢𝚎𝚛 𝟸  𝚁𝚎𝚜𝚘𝚕𝚟𝚒𝚗𝚐"),
+    ("🛡", "𝚂𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎 𝚅𝚊𝚕𝚒𝚍𝚊𝚝𝚒𝚗𝚐"),
+    ("💾", "𝙾𝚞𝚝𝚙𝚞𝚝 𝚂𝚊𝚟𝚎𝚍"),
+]
+
+def _rdx_msg(cur):
+    h = "🔓  <b>𝗥𝗗𝗫  𝗗𝗲𝗰𝗿𝘆𝗽𝘁  𝗘𝗻𝗴𝗶𝗻𝗲  𝘃𝟳.𝟭</b>\n\n"
+    lines = []
+    for i, (icon, label) in enumerate(_RDX):
+        if i < cur:    lines.append(f"  ✦  {icon}  {label}")
+        elif i == cur: lines.append(f"  ⟳  {icon}  {label}...")
+        else:          lines.append(f"  ◌  {icon}  {label}")
+    return h + "\n".join(lines)
+
+# ══════════════════════════════════════════════════════
+#   SERVER ENGINE  PROGRESS BAR  ANIMATION  (Updated)
 # ══════════════════════════════════════════════════════
 _BR = [
-    (0,  "𝙴𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗 𝚝𝚢𝚙𝚎  ╌  𝗦𝘁𝗮𝗻𝗱𝗮𝗿𝗱"),
-    (15, "𝙻𝚊𝚞𝚗𝚌𝚑𝚒𝚗𝚐 𝚂𝚎𝚛𝚟𝚎𝚛..."),
-    (30, "𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝚂𝚎𝚛𝚟𝚎𝚛..."),
-    (45, "𝚂𝚎𝚛𝚟𝚎𝚛 𝚛𝚞𝚗𝚗𝚒𝚗𝚐..."),
-    (60, "𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝙷𝚃𝙼𝙻..."),
-    (75, "𝚁𝚎𝚗𝚍𝚎𝚛𝚒𝚗𝚐 𝙷𝚝𝚖𝚕..."),
-    (88, "𝙱𝚞𝚒𝚕𝚍𝚒𝚗𝚐 𝚘𝚞𝚝𝚙𝚞𝚝..."),
-    (95, "𝙵𝚒𝚗𝚊𝚕𝚒𝚣𝚒𝚗𝚐..."),
+    ( 0,  "𝙴𝚗𝚌𝚛𝚢𝚙𝚝 𝚃𝚢𝚙𝚎  ╌  𝗦𝗲𝗿𝘃𝗲𝗿"),
+    (12,  "𝙻𝚊𝚞𝚗𝚌𝚑𝚒𝚗𝚐 𝙲𝚑𝚛𝚘𝚖𝚒𝚞𝚖..."),
+    (26,  "𝙻𝚘𝚊𝚍𝚒𝚗𝚐 𝙴𝚗𝚐𝚒𝚗𝚎..."),
+    (40,  "𝚂𝚎𝚛𝚟𝚎𝚛 𝚁𝚞𝚗𝚗𝚒𝚗𝚐..."),
+    (55,  "𝚂𝚌𝚊𝚗𝚗𝚒𝚗𝚐 𝙷𝚃𝙼𝙻..."),
+    (68,  "𝚁𝚎𝚗𝚍𝚎𝚛𝚒𝚗𝚐 𝙿𝚊𝚐𝚎..."),
+    (80,  "𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚒𝚗𝚐 𝙳𝚊𝚝𝚊..."),
+    (91,  "𝙱𝚞𝚒𝚕𝚍𝚒𝚗𝚐 𝙾𝚞𝚝𝚙𝚞𝚝..."),
+    (97,  "𝙵𝚒𝚗𝚊𝚕𝚒𝚣𝚒𝚗𝚐..."),
 ]
 
 def _br_msg(idx):
     pct, label = _BR[idx % len(_BR)]
-    bar = "█"*int(pct/10) + "░"*(10-int(pct/10))
+    filled = int(pct / 10)
+    bar    = "█" * filled + "░" * (10 - filled)
     return (
-        f"🖥️  <b>𝗦𝗲𝗿𝘃𝗲𝗿  𝗙𝗲𝗰𝗵  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
+        f"🖥️  <b>𝗦𝗲𝗿𝘃𝗲𝗿  𝗥𝗲𝗻𝗱𝗲𝗿  𝗘𝗻𝗴𝗶𝗻𝗲</b>\n\n"
         f"  [{bar}]  {pct}%\n\n"
         f"  🔹  {label}"
     )
 
 # ══════════════════════════════════════════════════════
-#   DECODE STEP 2 — PROCESS
+#   DECODE  STEP 2 — PROCESS  (Auto-Detect: PK → RDX → Server)
 # ══════════════════════════════════════════════════════
 async def _do_decode(update, context, doc, fname):
     msg = await update.message.reply_text("🛰️  𝙴𝚜𝚝𝚊𝚋𝚕𝚒𝚜𝚑𝚒𝚗𝚐 𝚌𝚘𝚗𝚗𝚎𝚌𝚝𝚒𝚘𝚗...")
-    for s in ["📥  𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚒𝚗𝚐 𝚏𝚒𝚕𝚎...", "🔬  𝙸𝚗𝚜𝚙𝚎𝚌𝚝𝚒𝚗𝚐 𝚜𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎...", "🧪  𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗..."]:
-        await asyncio.sleep(0.8)
+    for s in ["📥  𝙳𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚒𝚗𝚐 𝚏𝚒𝚕𝚎...",
+              "🔬  𝙸𝚗𝚜𝚙𝚎𝚌𝚝𝚒𝚗𝚐 𝚜𝚝𝚛𝚞𝚌𝚝𝚞𝚛𝚎...",
+              "🧪  𝙰𝚗𝚊𝚕𝚢𝚣𝚒𝚗𝚐 𝚎𝚗𝚌𝚛𝚢𝚙𝚝𝚒𝚘𝚗..."]:
+        await asyncio.sleep(0.75)
         try: await msg.edit_text(s)
         except: pass
+
     try:
         file_obj = await context.bot.get_file(doc.file_id)
         with tempfile.TemporaryDirectory() as tmp:
             in_path  = os.path.join(tmp, fname)
             await file_obj.download_to_drive(in_path)
             base     = fname.rsplit(".", 1)
-            out_name = f"{base[0]}_decoded.{base[1]}" if len(base)==2 else f"{fname}_decoded"
+            out_name = f"{base[0]}_decoded.{base[1]}" if len(base) == 2 else f"{fname}_decoded"
             out_path = os.path.join(tmp, out_name)
+
             with open(in_path, "r", encoding="utf-8", errors="replace") as f: raw = f.read()
 
+            decoded    = None
+            screenshot = None
+            method     = ""
+
+            # ── ENGINE 1: phpkobo ──────────────────────────────────
             if detect_phpkobo(raw):
-                # ── PhpKobo engine ──────────────────────────────────────
                 for step in range(len(_PK)):
                     try: await msg.edit_text(_pk_msg(step), parse_mode=ParseMode.HTML)
                     except: pass
                     await asyncio.sleep(0.55)
                 decoded = decode_phpkobo(raw)
-                method  = "⚡  𝗽𝗵𝗽𝗸𝗼𝗯𝗼 𝚎𝚗𝚐𝚒𝚗𝚎"
+                method  = "⚡  𝗽𝗵𝗽𝗸𝗼𝗯𝗼 𝙴𝚗𝚐𝚒𝚗𝚎"
                 with open(out_path, "w", encoding="utf-8") as f: f.write(decoded)
                 try: await msg.edit_text("📸  𝙲𝚊𝚙𝚝𝚞𝚛𝚒𝚗𝚐 𝚜𝚌𝚛𝚎𝚎𝚗𝚜𝚑𝚘𝚝...")
                 except: pass
                 screenshot = await take_screenshot(out_path)
+                db["stats"]["phpkobo"] = db["stats"].get("phpkobo", 0) + 1
 
+            # ── ENGINE 2: RDX v7.1 ────────────────────────────────
             elif detect_rdx(raw):
-                # ── RDX DECODER V7.1 engine ─────────────────────────────
+                # Start decode task in background
+                rdx_task = asyncio.create_task(decode_rdx(in_path, out_path))
+                # Show animated checklist while task runs
                 for step in range(len(_RDX)):
                     try: await msg.edit_text(_rdx_msg(step), parse_mode=ParseMode.HTML)
                     except: pass
-                    await asyncio.sleep(0.55)
-                decoded = decode_rdx(raw)
-                method  = "🔴  𝗥𝗗𝗫 𝗩𝟳.𝟭 𝚎𝚗𝚐𝚒𝚗𝚎"
-                with open(out_path, "w", encoding="utf-8") as f: f.write(decoded)
-                try: await msg.edit_text("📸  𝙲𝚊𝚙𝚝𝚞𝚛𝚒𝚗𝚐 𝚜𝚌𝚛𝚎𝚎𝚗𝚜𝚑𝚘𝚝...")
-                except: pass
-                screenshot = await take_screenshot(out_path)
+                    await asyncio.sleep(0.65)
+                # If still running, show finalizing
+                if not rdx_task.done():
+                    try: await msg.edit_text("⚙️  𝙵𝚒𝚗𝚊𝚕𝚒𝚣𝚒𝚗𝚐 𝚁𝙳𝚇 𝚍𝚎𝚌𝚘𝚍𝚎...")
+                    except: pass
+                try:
+                    decoded    = await rdx_task
+                    method     = "🔓  𝗥𝗗𝗫 𝘃𝟳.𝟭 𝙴𝚗𝚐𝚒𝚗𝚎"
+                    try: await msg.edit_text("📸  𝙲𝚊𝚙𝚝𝚞𝚛𝚒𝚗𝚐 𝚜𝚌𝚛𝚎𝚎𝚗𝚜𝚑𝚘𝚝...")
+                    except: pass
+                    screenshot = await take_screenshot(out_path)
+                    db["stats"]["rdx"] = db["stats"].get("rdx", 0) + 1
+                except Exception as rdx_e:
+                    # Fallback to Server engine
+                    logger.warning(f"RDX engine failed ({rdx_e}), falling back to Server engine")
+                    try: await msg.edit_text("⚠️  𝚁𝙳𝚇 𝚏𝚊𝚒𝚕𝚎𝚍, 𝚞𝚜𝚒𝚗𝚐 𝚂𝚎𝚛𝚟𝚎𝚛 𝙴𝚗𝚐𝚒𝚗𝚎...")
+                    except: pass
+                    await asyncio.sleep(0.7)
+                    task = asyncio.create_task(render_html(in_path))
+                    i = 0
+                    while not task.done():
+                        try: await msg.edit_text(_br_msg(i), parse_mode=ParseMode.HTML)
+                        except: pass
+                        i += 1; await asyncio.sleep(1.4)
+                    decoded, screenshot = await task
+                    method = "🖥️  𝗦𝗲𝗿𝘃𝗲𝗿 𝙴𝚗𝚐𝚒𝚗𝚎 (𝚏𝚊𝚕𝚕𝚋𝚊𝚌𝚔)"
+                    with open(out_path, "w", encoding="utf-8") as f: f.write(decoded)
+                    db["stats"]["server"] = db["stats"].get("server", 0) + 1
 
+            # ── ENGINE 3: Server / Browser ─────────────────────────
             else:
-                # ── Server / Browser engine ─────────────────────────────
                 task = asyncio.create_task(render_html(in_path))
                 i = 0
                 while not task.done():
@@ -640,34 +458,37 @@ async def _do_decode(update, context, doc, fname):
                     except: pass
                     i += 1; await asyncio.sleep(1.4)
                 decoded, screenshot = await task
-                method  = "🖥️  𝗦𝗲𝗿𝘃𝗲𝗿 𝙵𝚎𝚌𝚑"
+                method = "🖥️  𝗦𝗲𝗿𝘃𝗲𝗿 𝙴𝚗𝚐𝚒𝚗𝚎"
                 with open(out_path, "w", encoding="utf-8") as f: f.write(decoded)
+                db["stats"]["server"] = db["stats"].get("server", 0) + 1
 
-            db["stats"]["total_decodes"] = db["stats"].get("total_decodes",0)+1; save_db(db)
+            # ── Update global stats ────────────────────────────────
+            db["stats"]["total_decodes"] = db["stats"].get("total_decodes", 0) + 1
+            save_db(db)
 
-            # ── Send screenshot first ──────────────────────────────────
+            # ── Send results ───────────────────────────────────────
             try: await msg.edit_text("✦  𝙳𝚘𝚗𝚎!  𝚂𝚎𝚗𝚍𝚒𝚗𝚐 𝚛𝚎𝚜𝚞𝚕𝚝𝚜...")
             except: pass
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.4)
 
             import io
             await update.message.reply_photo(
                 photo=io.BytesIO(screenshot),
                 caption=(
-                    f"🖼  <b>𝗣𝗮𝗴𝗲 𝗦𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁</b>\n\n⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌  {method}\n"
+                    f"🖼  <b>𝗣𝗮𝗴𝗲 𝗦𝗰𝗿𝗲𝗲𝗻𝘀𝗵𝗼𝘁</b>\n\n"
+                    f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌  {method}\n"
                     "📎  𝙵𝚒𝚕𝚎 𝚜𝚎𝚗𝚍𝚒𝚗𝚐 𝚋𝚎𝚕𝚘𝚠 ↓"
                 ),
                 parse_mode=ParseMode.HTML,
             )
 
-            # ── Send decoded file ──────────────────────────────────────
             with open(out_path, "rb") as f:
                 await update.message.reply_document(
                     document=f, filename=out_name,
                     caption=(
-                        "╭━━━━━━━━━━━━━━━━━━━━━━━╮\n"
+                        "╔══════════════════════════╗\n"
                         "  ✅  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹!</b>\n"
-                        "╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
+                        "╚══════════════════════════╝\n\n"
                         f"🗂  <b>𝗙𝗶𝗹𝗲</b>    ╌  <code>{out_name}</code>\n"
                         f"⚙️  <b>𝗠𝗲𝘁𝗵𝗼𝗱</b>  ╌  {method}"
                     ),
@@ -675,45 +496,82 @@ async def _do_decode(update, context, doc, fname):
                 )
             try: await msg.delete()
             except: pass
+
     except Exception as e:
         logger.error(f"Decode error: {e}")
         try:
             await msg.edit_text(
-                "╭━━━━━━━━━━━━━━━━━━╮\n"
+                "╔══════════════════╗\n"
                 "  ❌  <b>𝗗𝗲𝗰𝗼𝗱𝗲 𝗙𝗮𝗶𝗹𝗲𝗱</b>\n"
-                "╰━━━━━━━━━━━━━━━━━━╯\n\n"
-                f"<code>{e}</code>", parse_mode=ParseMode.HTML)
+                "╚══════════════════╝\n\n"
+                f"<code>{e}</code>",
+                parse_mode=ParseMode.HTML)
         except: pass
 
 # ══════════════════════════════════════════════════════
-#   DEVELOPER INFO
+#   DEVELOPER INFO  — New Design
 # ══════════════════════════════════════════════════════
 async def _dev_info(update, context):
     txt = (
-        "╭━━━━━━━━━━━━━━━━━━━━━━╮\n"
+        "╔══════════════════════════╗\n"
         "  🧑‍💻  <b>𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿 𝗣𝗿𝗼𝗳𝗶𝗹𝗲</b>\n"
-        "╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        "╚══════════════════════════╝\n\n"
         "🏷  <b>𝗡𝗮𝗺𝗲</b>   ╌  𝘽𝘿 𝘼𝙇𝘼𝙈𝙄𝙉\n\n"
         "🎯  <b>𝗗𝗿𝗲𝗮𝗺</b>  ╌  𝙃𝙖𝙘𝙠𝙞𝙣𝙜  ♦  𝙏𝙧𝙖𝙙𝙞𝙣𝙜  ♦  𝙈𝙤𝙣𝙚𝙮\n\n"
         "💡  <b>𝗪𝗼𝗿𝗸</b>   ╌  𝙉𝙤𝙩 𝘼𝙣𝙮𝙩𝙝𝙞𝙣𝙜\n\n"
-        "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
-        "𝚃𝚑𝚊𝚗𝚔𝚜 𝚏𝚘𝚛 𝚟𝚒𝚜𝚒𝚝𝚒𝚗𝚐!  𝙸𝚏 𝚢𝚘𝚞 𝚗𝚎𝚎𝚍\n"
-        "𝚑𝚎𝚕𝚙, 𝚑𝚒𝚝 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 𝚋𝚎𝚕𝚘𝚠 ↓"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🛠  <b>𝗕𝗼𝘁 𝗜𝗻𝗳𝗼</b>\n\n"
+        "◈  𝗽𝗵𝗽𝗸𝗼𝗯𝗼  𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "◈  𝗥𝗗𝗫 𝘃𝟳.𝟭  𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "◈  𝗦𝗲𝗿𝘃𝗲𝗿    𝙴𝚗𝚐𝚒𝚗𝚎\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "𝚃𝚑𝚊𝚗𝚔𝚜 𝚏𝚘𝚛 𝚟𝚒𝚜𝚒𝚝𝚒𝚗𝚐!  𝙷𝚒𝚝 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 ↓"
     )
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("💬  𝗖𝗼𝗻𝘁𝗮𝗰𝘁 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿", url=f"https://t.me/{OWNER_USERNAME}")]])
+    kb = InlineKeyboardMarkup([[
+        InlineKeyboardButton("💬  𝗖𝗼𝗻𝘁𝗮𝗰𝘁 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿",
+                             url=f"https://t.me/{OWNER_USERNAME}")
+    ]])
     await update.message.reply_html(txt, reply_markup=kb)
+
+# ══════════════════════════════════════════════════════
+#   BOT STATISTICS  — New Design
+# ══════════════════════════════════════════════════════
+async def _bot_status(update, context):
+    pub  = sum(1 for c in db["channels"] if c.get("type","public") == "public")
+    priv = sum(1 for c in db["channels"] if c.get("type") == "private")
+    pk   = db["stats"].get("phpkobo", 0)
+    rdx  = db["stats"].get("rdx", 0)
+    srv  = db["stats"].get("server", 0)
+    txt  = (
+        "╔══════════════════════════╗\n"
+        "  📊  <b>𝗕𝗼𝘁 𝗦𝘁𝗮𝘁𝗶𝘀𝘁𝗶𝗰𝘀</b>\n"
+        "╚══════════════════════════╝\n\n"
+        f"👥  <b>𝗧𝗼𝘁𝗮𝗹 𝗨𝘀𝗲𝗿𝘀</b>     ╌  <b>{len(db['users'])}</b>\n\n"
+        f"⚡  <b>𝗗𝗲𝗰𝗼𝗱𝗲𝘀 𝗗𝗼𝗻𝗲</b>   ╌  <b>{db['stats'].get('total_decodes',0)}</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "〔 𝗘𝗻𝗴𝗶𝗻𝗲 𝗕𝗿𝗲𝗮𝗸𝗱𝗼𝘄𝗻 〕\n\n"
+        f"⚡  <b>𝗽𝗵𝗽𝗸𝗼𝗯𝗼</b>  ╌  <b>{pk}</b>\n"
+        f"🔓  <b>𝗥𝗗𝗫 𝘃𝟳.𝟭</b>  ╌  <b>{rdx}</b>\n"
+        f"🖥️  <b>𝗦𝗲𝗿𝘃𝗲𝗿</b>    ╌  <b>{srv}</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"📡  <b>𝗣𝘂𝗯 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀</b>   ╌  <b>{pub}</b>\n\n"
+        f"🔐  <b>𝗣𝗿𝗶𝘃 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀</b>  ╌  <b>{priv}</b>\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🖤  𝙸 𝚕𝚘𝚟𝚎 𝚖𝚢 𝚞𝚜𝚎𝚛𝚜 — 𝚒𝚝'𝚜 𝚏𝚛𝚎𝚎."
+    )
+    await update.message.reply_html(txt)
 
 # ══════════════════════════════════════════════════════
 #   ADMIN PANEL
 # ══════════════════════════════════════════════════════
 def _panel_text():
-    pub  = sum(1 for c in db["channels"] if c.get("type","public")=="public")
-    priv = sum(1 for c in db["channels"] if c.get("type")=="private")
+    pub  = sum(1 for c in db["channels"] if c.get("type","public") == "public")
+    priv = sum(1 for c in db["channels"] if c.get("type") == "private")
     st   = "🟢  𝙾𝚗𝚕𝚒𝚗𝚎" if bot_active() else "🔴  𝙾𝚏𝚏𝚕𝚒𝚗𝚎"
     return (
-        "╭━━━━━━━━━━━━━━━━━━━━━━╮\n"
+        "╔══════════════════════════╗\n"
         "  👑  <b>𝗔𝗱𝗺𝗶𝗻  𝗣𝗮𝗻𝗲𝗹</b>\n"
-        "╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        "╚══════════════════════════╝\n\n"
         f"🤖  <b>𝗦𝘁𝗮𝘁𝘂𝘀</b>    ╌  {st}\n"
         f"👥  <b>𝗨𝘀𝗲𝗿𝘀</b>     ╌  <b>{len(db['users'])}</b>\n"
         f"📡  <b>𝗣𝘂𝗯 𝗖𝗵</b>   ╌  <b>{pub}</b>\n"
@@ -751,9 +609,9 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not joined:
         n = len(missing)
         await update.message.reply_html(
-            "╭━━━━━━━━━━━━━━━━━━━━━━╮\n"
+            "╔══════════════════════════╗\n"
             "  📡  <b>𝗖𝗵𝗮𝗻𝗻𝗲𝗹 𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻</b>\n"
-            "╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
+            "╚══════════════════════════╝\n\n"
             f"𝙹𝚘𝚒𝚗 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚝𝚘 𝚞𝚜𝚎 𝚝𝚑𝚒𝚜 𝚋𝚘𝚝.\n\n"
             "𝚃𝚊𝚙 𝚋𝚎𝚕𝚘𝚠 𝚝𝚘 𝚓𝚘𝚒𝚗, 𝚝𝚑𝚎𝚗 𝚙𝚛𝚎𝚜𝚜 𝚝𝚑𝚎 𝚋𝚞𝚝𝚝𝚘𝚗 ↓",
             reply_markup=joined_reply_kb(),
@@ -797,7 +655,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await _process_admin_input(update, context, action, text); return
 
     if not bot_active() and not is_admin(user.id):
-        await update.message.reply_text("🔴  𝗕𝗼𝘁 𝗶𝘀 𝗼𝗳𝗳𝗹𝚒𝚗𝚎."); return
+        await update.message.reply_text("🔴  𝗕𝗼𝘁 𝗶𝘀 𝗼𝗳𝗳𝗹𝗶𝗻𝗲."); return
     if is_banned(user.id): return
     if context.user_data.get("waiting_for_html"):
         await update.message.reply_text("🗂  𝙿𝚕𝚎𝚊𝚜𝚎 𝚜𝚎𝚗𝚍 𝚊 .𝚑𝚝𝚖𝚕 𝚏𝚒𝚕𝚎."); return
@@ -806,7 +664,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         rec = db["users"].setdefault(user.id, {"username":"","name":"","joined":"","banned":False,"private_acked":[]})
         if "private_acked" not in rec: rec["private_acked"] = []
         for ch in db["channels"]:
-            if ch.get("type")=="private" and ch["id"] not in rec["private_acked"]: rec["private_acked"].append(ch["id"])
+            if ch.get("type")=="private" and ch["id"] not in rec["private_acked"]:
+                rec["private_acked"].append(ch["id"])
         save_db(db)
         joined, missing = await check_channels(context.bot, user.id)
         if not joined:
@@ -814,7 +673,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_html(
                 f"⚠️  <b>𝗡𝗼𝘁 𝗬𝗲𝘁!</b>  𝚂𝚝𝚒𝚕𝚕 <b>{n}</b> 𝚌𝚑𝚊𝚗𝚗𝚎𝚕{'𝚜' if n>1 else ''} 𝚙𝚎𝚗𝚍𝚒𝚗𝚐 ↓",
                 reply_markup=joined_reply_kb())
-            await update.message.reply_text("🗂  𝗣𝗲𝗻𝗱𝗶𝚗𝚐 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing))
+            await update.message.reply_text("🗂  𝗣𝗲𝗻𝗱𝗶𝗻𝗴 𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing))
             return
         if is_banned(user.id): await update.message.reply_html(ban_text(user.id)); return
         await send_welcome(context.bot, user.id, user.first_name); return
@@ -838,7 +697,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=joined_reply_kb())
             await update.message.reply_text("🗂  𝗖𝗵𝗮𝗻𝗻𝗲𝗹𝘀:", reply_markup=channels_inline_kb(missing)); return
         await _dev_info(update, context)
-    # else: ignore silently
+
+    elif "𝗦𝘁𝗮𝘁𝗶𝘀𝘁𝗶𝗰𝘀" in text or "Statistics" in text:
+        await _bot_status(update, context)
 
 # ══════════════════════════════════════════════════════
 #   ADMIN CALLBACK ROUTER
@@ -865,7 +726,7 @@ async def _admin_cb(update, context, data):
         except Exception as e: await q.answer(f"❌ {e}", show_alert=True)
 
     elif data == "admin_channels":
-        txt = "╭━━━━━━━━━━━━━━━━━━━━╮\n  📡  <b>𝗖𝗵𝗮𝗻𝗻𝗲𝗹 𝗟𝗶𝘀𝘁</b>\n╰━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        txt = "╔══════════════════════╗\n  📡  <b>𝗖𝗵𝗮𝗻𝗻𝗲𝗹 𝗟𝗶𝘀𝘁</b>\n╚══════════════════════╝\n\n"
         for i,ch in enumerate(db["channels"],1):
             icon = "📡" if ch.get("type","public")=="public" else "🔐"
             lbl  = "𝗣𝘂𝗯𝗹𝗶𝗰" if ch.get("type","public")=="public" else "𝗣𝗿𝗶𝘃𝗮𝘁𝗲"
@@ -914,7 +775,7 @@ async def _admin_cb(update, context, data):
             await _admin_cb(update, context, "admin_channels")
 
     elif data == "admin_admins":
-        txt = "╭━━━━━━━━━━━━━━━━━━━━╮\n  🛡  <b>𝗔𝗱𝗺𝗶𝗻 𝗟𝗶𝘀𝘁</b>\n╰━━━━━━━━━━━━━━━━━━━━╯\n\n"
+        txt = "╔══════════════════════╗\n  🛡  <b>𝗔𝗱𝗺𝗶𝗻 𝗟𝗶𝘀𝘁</b>\n╚══════════════════════╝\n\n"
         for aid in db["admins"]:
             ud = db["users"].get(aid,{}); txt += f"  ◈  {ud.get('name','Unknown')}  ╌  <code>{aid}</code>\n"
         if not db["admins"]: txt += "  𝙽𝚘 𝚊𝚍𝚖𝚒𝚗𝚜 𝚊𝚍𝚍𝚎𝚍."
@@ -1059,7 +920,7 @@ async def _process_admin_input(update, context, action, text):
                 except: pass
         try:
             await prog.edit_text(
-                "╭━━━━━━━━━━━━━━━━━━━━╮\n  📣  <b>𝗕𝗿𝗼𝗮𝗱𝗰𝗮𝘀𝘁 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲!</b>\n╰━━━━━━━━━━━━━━━━━━━━╯\n\n"
+                "╔══════════════════════╗\n  📣  <b>𝗕𝗿𝗼𝗮𝗱𝗰𝗮𝘀𝘁 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲!</b>\n╚══════════════════════╝\n\n"
                 f"✅  𝚂𝚎𝚗𝚝    ╌  <b>{ok}</b>\n❌  𝙵𝚊𝚒𝚕𝚎𝚍  ╌  <b>{fail}</b>\n👥  𝚃𝚘𝚝𝚊𝚕   ╌  <b>{total}</b>",
                 parse_mode=ParseMode.HTML)
         except: pass
@@ -1068,6 +929,7 @@ async def _process_admin_input(update, context, action, text):
 #   MAIN
 # ══════════════════════════════════════════════════════
 def main():
+    check_node_js()
     Thread(target=run_flask, daemon=True).start()
     logger.info("Flask keep-alive started.")
     app = Application.builder().token(BOT_TOKEN).build()
